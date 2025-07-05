@@ -1,14 +1,14 @@
 // Translation data
 const translations = {
     ru: {
-        title: "BeenVONV - Модельное Агентство",
+        title: "Baden - Модельное Агентство",
         subtitle: "Модельное Агентство",
         searchTitle: "Поиск модели по ID",
         searchPlaceholder: "Введите ID модели (например: 123456789)",
         searchButton: "Найти",
         infoText: "Введите уникальный ID для поиска профиля модели",
         popularProfiles: "Популярные профили",
-        footer: "© 2024 BeenVONV Модельное Агентство. Все права защищены.",
+        footer: "© 2024 Baden Модельное Агентство. Все права защищены.",
         // Profile page
         profileName: "Стелла Авинуловска Шказенют Смирноваливска",
         personalInfo: "Личная информация",
@@ -35,14 +35,14 @@ const translations = {
         recentAwards: "Последние награды"
     },
     en: {
-        title: "BeenVONV - Modeling Agency",
+        title: "Baden - Modeling Agency",
         subtitle: "Modeling Agency",
         searchTitle: "Search Model by ID",
         searchPlaceholder: "Enter model ID (e.g.: 123456789)",
         searchButton: "Search",
         infoText: "Enter unique ID to search for model profile",
         popularProfiles: "Popular Profiles",
-        footer: "© 2024 BeenVONV Modeling Agency. All rights reserved.",
+        footer: "© 2024 Baden Modeling Agency. All rights reserved.",
         // Profile page
         profileName: "Stella Avinulovska Shkazenyut Smirnovalievska",
         personalInfo: "Personal Information",
@@ -274,7 +274,7 @@ function createHomePage() {
     body.innerHTML = `
         <div class="container">
             <header>
-                <h1>BeenVONV</h1>
+                <h1>Baden</h1>
                 <p class="subtitle">${t.subtitle}</p>
             </header>
 
