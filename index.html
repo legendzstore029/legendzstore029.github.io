@@ -1,35 +1,137 @@
-
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Baden - Модельное Агентство</title>
-    <link href="style.css" rel="stylesheet" type="text/css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LegendZ Wallet (Demo)</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .card {
+      background: #1e293b;
+      padding: 30px;
+      border-radius: 12px;
+      width: 350px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+    h2 { margin-bottom: 10px; }
+    p { font-size: 14px; color: #94a3b8; }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 8px;
+      border: none;
+      background: #0f172a;
+      color: white;
+    }
+
+    button {
+      margin-top: 15px;
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #22c55e;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .hidden { display: none; }
+
+    .toggle {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>Baden</h1>
-            <p class="subtitle">Модельное Агентство</p>
-        </header>
-        
-        <div class="search-section">
-            <h2>Поиск модели по ID</h2>
-            <div class="search-box">
-                <input type="text" id="modelId" placeholder="Введите ID модели (например: 123456789)">
-                <button onclick="searchModel()">Найти</button>
-            </div>
-            <p class="info-text">Введите уникальный ID для поиска профиля модели</p>
-        </div>
-        
-        
-        
-        <footer>
-            <p>&copy; 2024 Baden Модельное Агентство. Все права защищены.</p>
-        </footer>
-    </div>
-    
-    <script src="script.js"></script>
+
+<div class="card" id="landing">
+  <h2>LegendZ Wallet (Demo)</h2>
+  <p>This is a simulated UI. No real accounts or data are used.</p>
+  <button onclick="startDemo()">Continue</button>
+</div>
+
+<div class="card hidden" id="link">
+  <h2>Link Wallet (Demo)</h2>
+  <label>Username</label>
+  <div style="display:flex;">
+    <span style="padding:10px;background:#0f172a;border-radius:8px 0 0 8px;">@</span>
+    <input id="user" style="border-radius:0 8px 8px 0;" placeholder="enter name"/>
+  </div>
+  <button onclick="generateAddress()">Generate Address</button>
+</div>
+
+<div class="card hidden" id="address">
+  <h2>Generated Address</h2>
+  <p id="addr"></p>
+  <button onclick="finish()">Finish Linking</button>
+</div>
+
+<div class="card hidden" id="dashboard">
+  <h2>Dashboard (Demo)</h2>
+  <div class="toggle">
+    <span>2FA Enabled</span>
+    <input type="checkbox" onchange="saveSetting('2fa', this.checked)">
+  </div>
+  <div class="toggle">
+    <span>Transaction Alerts</span>
+    <input type="checkbox" onchange="saveSetting('alerts', this.checked)">
+  </div>
+  <div class="toggle">
+    <span>Device Approval</span>
+    <input type="checkbox" onchange="saveSetting('device', this.checked)">
+  </div>
+</div>
+
+<script>
+function startDemo() {
+  document.getElementById('landing').classList.add('hidden');
+  document.getElementById('link').classList.remove('hidden');
+}
+
+function generateAddress() {
+  const name = document.getElementById('user').value;
+  if (!name) return alert("Enter a username (demo only)");
+
+  const rand = Math.floor(100000000 + Math.random() * 900000000);
+  const address = "legendzecc-" + rand;
+
+  localStorage.setItem("demoUser", name);
+  localStorage.setItem("demoAddress", address);
+
+  document.getElementById('link').classList.add('hidden');
+  document.getElementById('address').classList.remove('hidden');
+  document.getElementById('addr').innerText = address;
+}
+
+function finish() {
+  document.getElementById('address').classList.add('hidden');
+  document.getElementById('dashboard').classList.remove('hidden');
+
+  // Load saved settings
+  document.querySelectorAll("input[type=checkbox]").forEach(cb => {
+    const key = cb.parentElement.innerText.trim();
+    cb.checked = localStorage.getItem(key) === "true";
+  });
+}
+
+function saveSetting(key, value) {
+  localStorage.setItem(key, value);
+}
+</script>
+
 </body>
 </html>
