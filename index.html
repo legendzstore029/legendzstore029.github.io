@@ -1,137 +1,1605 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>LegendZ Wallet (Demo)</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #0f172a;
-      color: #e5e7eb;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-    .card {
-      background: #1e293b;
-      padding: 30px;
-      border-radius: 12px;
-      width: 350px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.5);
-    }
-    h2 { margin-bottom: 10px; }
-    p { font-size: 14px; color: #94a3b8; }
+  <script type="module">
+import { createHotContext } from "/@vite/client";
+const hot = createHotContext("/__dummy__runtime-error-plugin");
 
-    input {
-      width: 100%;
-      padding: 10px;
-      margin-top: 10px;
-      border-radius: 8px;
-      border: none;
-      background: #0f172a;
-      color: white;
-    }
+function sendError(error) {
+  if (!(error instanceof Error)) {
+    error = new Error("(unknown runtime error)");
+  }
+  const serialized = {
+    message: error.message,
+    stack: error.stack,
+  };
+  hot.send("runtime-error-plugin:error", serialized);
+}
 
-    button {
-      margin-top: 15px;
-      width: 100%;
-      padding: 10px;
-      border: none;
-      border-radius: 8px;
-      background: #22c55e;
-      color: black;
-      font-weight: bold;
-      cursor: pointer;
-    }
+window.addEventListener("error", (evt) => {
+  sendError(evt.error);
+});
 
-    .hidden { display: none; }
+window.addEventListener("unhandledrejection", (evt) => {
+  sendError(evt.reason);
+});
+</script>
 
-    .toggle {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 10px;
-    }
-  </style>
+  <script type="module">import { injectIntoGlobalHook } from "/@react-refresh";
+injectIntoGlobalHook(window);
+window.$RefreshReg$ = () => {};
+window.$RefreshSig$ = () => (type) => type;</script>
+
+  <script type="module" src="/@vite/client"></script>
+
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#0c0c10" />
+<title>LegendZ Wallet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0c0c10;
+  --bg-1:#111116;
+  --bg-2:#16161d;
+  --bg-3:#1c1c25;
+  --bg-4:#23232e;
+  --line:rgba(255,255,255,.06);
+  --line-2:rgba(255,255,255,.10);
+  --line-3:rgba(255,255,255,.14);
+  --text:#ececf1;
+  --text-2:#a1a1aa;
+  --text-3:#71717a;
+  --text-4:#52525b;
+  --acc:#8b5cf6;
+  --acc-2:#7c3aed;
+  --acc-soft:rgba(139,92,246,.12);
+  --acc-line:rgba(139,92,246,.28);
+  --success:#10b981;
+  --success-soft:rgba(16,185,129,.12);
+  --danger:#f43f5e;
+  --danger-soft:rgba(244,63,94,.12);
+  --warn:#f59e0b;
+  --warn-soft:rgba(245,158,11,.12);
+  --r-sm:6px;--r-md:10px;--r-lg:14px;--r-xl:18px;--r-2xl:22px;
+  --ease:cubic-bezier(.16,1,.3,1);
+}
+html{font-size:14px;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+body{
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100dvh;
+  overflow-x:hidden;
+  letter-spacing:-.005em;
+}
+::-moz-selection{background:var(--acc-soft);color:var(--text)}
+::selection{background:var(--acc-soft);color:var(--text)}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bg-4);border-radius:4px;border:2px solid var(--bg)}
+::-webkit-scrollbar-thumb:hover{background:var(--text-4)}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+@keyframes toastIn{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes toastOut{to{opacity:0;transform:translateY(12px) scale(.97)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+#app{position:relative;min-height:100dvh;display:flex;flex-direction:column}
+
+.view{display:none;animation:fadeUp .35s var(--ease) both}
+.view.active{display:flex;flex-direction:column;flex:1}
+
+/* ================= AUTH (login / link / address) ================= */
+.auth-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:32px 20px}
+.auth-stack{width:100%;max-width:400px;display:flex;flex-direction:column}
+
+.auth-brand{display:flex;align-items:center;gap:11px;margin-bottom:32px;align-self:flex-start}
+.brand-mark{
+  width:38px;height:38px;border-radius:11px;
+  background:linear-gradient(135deg,var(--acc),var(--acc-2));
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 6px 18px -4px rgba(139,92,246,.5);
+  flex-shrink:0;
+}
+.brand-mark svg{width:20px;height:20px;color:#fff}
+.brand-text{display:flex;flex-direction:column;line-height:1.1}
+.brand-name{font-size:1rem;font-weight:700;letter-spacing:-.02em;color:var(--text)}
+.brand-tag{font-size:.66rem;color:var(--text-3);font-weight:500;margin-top:2px}
+
+.auth-card{
+  width:100%;
+  background:var(--bg-1);
+  border:1px solid var(--line);
+  border-radius:var(--r-2xl);
+  padding:32px 30px;
+  box-shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 16px 40px -20px rgba(0,0,0,.6);
+}
+.auth-h{font-size:1.35rem;font-weight:700;letter-spacing:-.02em;line-height:1.2;margin-bottom:6px}
+.auth-p{font-size:.84rem;color:var(--text-2);line-height:1.55;margin-bottom:24px}
+
+.field{margin-bottom:14px}
+.field-l{display:block;font-size:.78rem;font-weight:500;color:var(--text-2);margin-bottom:7px}
+.field-wrap{position:relative;display:flex;align-items:stretch;background:var(--bg-2);border:1px solid var(--line-2);border-radius:var(--r-md);transition:border-color .15s,box-shadow .15s;overflow:hidden}
+.field-wrap:focus-within{border-color:var(--acc-line);box-shadow:0 0 0 3px var(--acc-soft)}
+.field-wrap.err{border-color:var(--danger);box-shadow:0 0 0 3px var(--danger-soft);animation:shake .35s ease}
+.field-prefix{
+  display:flex;align-items:center;justify-content:center;
+  padding:0 12px;background:var(--bg-3);
+  font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--acc);
+  border-right:1px solid var(--line-2);font-size:.95rem;-webkit-user-select:none;-moz-user-select:none;user-select:none;
+}
+.field-input{
+  flex:1;background:transparent;border:none;outline:none;
+  padding:11px 14px;font-size:.88rem;color:var(--text);
+  font-family:'Inter',sans-serif;width:100%;
+}
+.field-input::-moz-placeholder{color:var(--text-4)}
+.field-input::placeholder{color:var(--text-4)}
+.field-eye{
+  background:transparent;border:none;color:var(--text-3);padding:0 12px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:color .15s;
+}
+.field-eye:hover{color:var(--text)}
+.field-help{font-size:.72rem;color:var(--text-3);margin-top:7px;line-height:1.45}
+.field-err{font-size:.74rem;color:var(--danger);margin-top:7px;display:flex;align-items:center;gap:5px;font-weight:500}
+
+.btn{
+  width:100%;padding:11px 18px;border:none;border-radius:var(--r-md);
+  font-family:'Inter',sans-serif;font-size:.88rem;font-weight:600;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:background .15s,transform .1s,opacity .15s;
+}
+.btn-primary{
+  background:var(--acc);color:#fff;
+  box-shadow:0 1px 0 rgba(255,255,255,.1) inset;
+}
+.btn-primary:hover{background:var(--acc-2)}
+.btn-primary:active{transform:translateY(1px)}
+.btn-primary:disabled{opacity:.6;cursor:not-allowed}
+.btn-ghost{background:var(--bg-3);color:var(--text);border:1px solid var(--line-2)}
+.btn-ghost:hover{background:var(--bg-4);border-color:var(--line-3)}
+.btn-danger{background:transparent;color:var(--danger);border:1px solid rgba(244,63,94,.28)}
+.btn-danger:hover{background:var(--danger-soft);border-color:rgba(244,63,94,.4)}
+.btn-loading .btn-txt{opacity:.5}
+.btn-spinner{width:14px;height:14px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;display:none}
+.btn-loading .btn-spinner{display:block}
+
+.auth-foot-link{margin-top:18px;text-align:center;font-size:.78rem;color:var(--text-3)}
+.auth-foot-link b{color:var(--text);font-weight:500}
+
+/* Step indicator */
+.steps{display:flex;align-items:center;justify-content:flex-start;gap:7px;margin-bottom:22px;font-size:.74rem;color:var(--text-3);font-weight:500}
+.step-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:6px;background:var(--bg-3);color:var(--text-2)}
+.step-pill.act{background:var(--acc-soft);color:var(--acc)}
+.step-pill.done{background:var(--success-soft);color:var(--success)}
+.step-pill svg{width:11px;height:11px}
+.step-arrow{color:var(--text-4)}
+
+/* Address display */
+.addr-display{
+  background:var(--bg-2);border:1px solid var(--line-2);border-radius:var(--r-md);
+  padding:14px 14px;margin:18px 0;position:relative;
+}
+.addr-l{font-size:.74rem;color:var(--text-3);margin-bottom:6px;font-weight:500}
+.addr-val{
+  font-family:'JetBrains Mono',monospace;font-size:.92rem;font-weight:600;
+  color:var(--text);letter-spacing:0;word-break:break-all;line-height:1.5;
+  padding-right:42px;
+}
+.addr-cp{
+  position:absolute;top:11px;right:11px;
+  width:30px;height:30px;border-radius:7px;
+  background:var(--bg-3);border:1px solid var(--line-2);color:var(--text-2);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.addr-cp:hover{background:var(--bg-4);color:var(--text);border-color:var(--line-3)}
+.addr-cp.ok{color:var(--success);border-color:rgba(16,185,129,.3);background:var(--success-soft)}
+
+.notice{
+  background:var(--bg-2);border:1px solid var(--line);
+  border-radius:var(--r-md);padding:12px 14px;margin:14px 0 18px;
+  font-size:.78rem;color:var(--text-2);line-height:1.55;display:flex;gap:10px;
+}
+.notice-ico{flex-shrink:0;color:var(--acc);margin-top:1px}
+.notice b{color:var(--text);font-weight:600}
+
+/* ================= DASHBOARD ================= */
+.dash{flex:1;display:flex;flex-direction:column;min-height:0}
+.dash-hdr{
+  position:sticky;top:0;z-index:10;
+  height:64px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;border-bottom:1px solid var(--line);
+  background:rgba(12,12,16,.85);backdrop-filter:blur(12px);
+}
+.dh-l{display:flex;align-items:center;gap:11px}
+.dh-mark{
+  width:34px;height:34px;border-radius:10px;
+  background:linear-gradient(135deg,var(--acc),var(--acc-2));
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 4px 12px -3px rgba(139,92,246,.45);
+}
+.dh-mark svg{width:18px;height:18px;color:#fff}
+.dh-name{font-size:.92rem;font-weight:600;letter-spacing:-.01em;line-height:1.1}
+.dh-sub{font-size:.66rem;color:var(--text-3);margin-top:2px}
+.dh-r{display:flex;align-items:center;gap:4px}
+.icon-btn{
+  width:34px;height:34px;border-radius:9px;
+  background:transparent;border:1px solid transparent;color:var(--text-3);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.icon-btn:hover{background:var(--bg-2);color:var(--text);border-color:var(--line-2)}
+.dash-body{flex:1;overflow-y:auto;padding:28px 24px 60px}
+.dash-inner{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+
+.sub-banner{
+  width:100%;
+  border:1px solid var(--acc-line);
+  background:linear-gradient(135deg,rgba(139,92,246,.16),rgba(124,58,237,.06));
+  border-radius:var(--r-xl);
+  padding:16px 18px;
+  text-align:left;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  cursor:pointer;
+  box-shadow:0 10px 30px -18px rgba(139,92,246,.55);
+}
+.sub-banner:hover{border-color:rgba(139,92,246,.42)}
+.sub-banner-top{font-size:.72rem;color:var(--acc);font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.sub-banner-mid{font-size:1rem;font-weight:700;letter-spacing:-.01em;color:var(--text)}
+.sub-banner-btm{font-size:.8rem;color:var(--text-2)}
+.sub-banner-price{font-size:.78rem;color:var(--text-3)}
+.sub-banner-price b{color:var(--text);font-weight:700}
+
+/* Transfer Sentry Token card */
+.transfer-card{
+  background:linear-gradient(135deg,rgba(139,92,246,.08),rgba(124,58,237,.04));
+  border:1px solid var(--acc-line);border-radius:var(--r-xl);
+  padding:24px 26px;position:relative;overflow:hidden;
+}
+.transfer-card::before{
+  content:'';position:absolute;top:-40px;right:-40px;width:200px;height:200px;
+  background:radial-gradient(circle,rgba(139,92,246,.18),transparent 65%);pointer-events:none;
+}
+.transfer-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:6px;position:relative;z-index:1}
+.transfer-l-wrap{display:flex;align-items:center;gap:11px}
+.transfer-ico{
+  width:38px;height:38px;border-radius:11px;
+  background:rgba(139,92,246,.15);border:1px solid var(--acc-line);
+  display:flex;align-items:center;justify-content:center;color:var(--acc);flex-shrink:0;
+}
+.transfer-ico svg{width:18px;height:18px}
+.transfer-h{font-size:1rem;font-weight:600;letter-spacing:-.01em;line-height:1.25}
+.transfer-s{font-size:.78rem;color:var(--text-2);margin-top:3px;line-height:1.5;max-width:480px}
+.transfer-net-pill{
+  display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;
+  background:var(--bg-3);border:1px solid var(--line-2);
+  color:var(--text-2);font-size:.7rem;font-weight:500;flex-shrink:0;
+}
+.transfer-net-pill .pulse{width:6px;height:6px;border-radius:50%;background:var(--success);animation:pulse 2s ease infinite}
+.transfer-meta{
+  display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;position:relative;z-index:1;
+}
+.transfer-meta-item{
+  display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:7px;
+  background:var(--bg-2);border:1px solid var(--line-2);
+  font-size:.72rem;color:var(--text-2);font-family:'JetBrains Mono',monospace;
+}
+.transfer-meta-item b{color:var(--text);font-weight:600}
+.transfer-actions{margin-top:18px;position:relative;z-index:1}
+.transfer-btn{
+  width:100%;padding:13px 18px;border:none;border-radius:var(--r-md);
+  background:var(--acc);color:#fff;
+  font-family:'Inter',sans-serif;font-size:.88rem;font-weight:600;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:background .15s,transform .1s;
+  box-shadow:0 6px 18px -6px rgba(139,92,246,.5),0 1px 0 rgba(255,255,255,.1) inset;
+}
+.transfer-btn:hover{background:var(--acc-2)}
+.transfer-btn:active{transform:translateY(1px)}
+.transfer-btn svg{width:15px;height:15px}
+
+/* Info row cards */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:600px){.info-grid{grid-template-columns:1fr}}
+.info-card{
+  background:var(--bg-1);border:1px solid var(--line);border-radius:var(--r-lg);
+  padding:14px 16px;
+}
+.info-card-l{font-size:.74rem;color:var(--text-3);margin-bottom:7px;font-weight:500}
+.info-card-v{font-family:'JetBrains Mono',monospace;font-size:.82rem;font-weight:600;color:var(--text);word-break:break-all;line-height:1.45}
+.info-card-v.normal{font-family:'Inter',sans-serif}
+.info-card-extra{font-size:.7rem;color:var(--text-3);margin-top:6px;display:flex;align-items:center;gap:6px}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;font-size:.66rem;font-weight:500}
+.tag-success{background:var(--success-soft);color:var(--success)}
+.tag-warn{background:var(--warn-soft);color:var(--warn)}
+.tag-acc{background:var(--acc-soft);color:var(--acc)}
+
+/* Section */
+.section{
+  background:var(--bg-1);border:1px solid var(--line);border-radius:var(--r-lg);
+  overflow:hidden;
+}
+.section-hdr{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.section-h{font-size:.88rem;font-weight:600;letter-spacing:-.005em}
+.section-sub{font-size:.72rem;color:var(--text-3);margin-top:3px;font-weight:400}
+.section-body{padding:4px 0}
+
+/* ================= SETTINGS PANEL ================= */
+.set-overlay{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,.5);backdrop-filter:blur(4px);
+  opacity:0;pointer-events:none;transition:opacity .25s var(--ease);
+}
+.set-overlay.show{opacity:1;pointer-events:all}
+.set-panel{
+  position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);z-index:201;
+  background:var(--bg-1);border-left:1px solid var(--line-2);
+  display:flex;flex-direction:column;
+  transform:translateX(100%);transition:transform .35s var(--ease);
+  box-shadow:-12px 0 40px -12px rgba(0,0,0,.5);
+}
+.set-panel.show{transform:none}
+.set-hdr{
+  padding:18px 22px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.set-h{font-size:1.05rem;font-weight:700;letter-spacing:-.01em}
+.set-h-sub{font-size:.72rem;color:var(--text-3);margin-top:3px}
+.set-body{flex:1;overflow-y:auto;padding:6px 0 22px}
+
+.set-group{padding:20px 22px 8px}
+.set-group-h{font-size:.7rem;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.set-row{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:14px 22px;border-top:1px solid var(--line);
+}
+.set-row:first-of-type{border-top:none}
+.set-row-info{flex:1;min-width:0}
+.set-row-l{font-size:.84rem;font-weight:500;color:var(--text);display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.set-row-tag{display:inline-block;padding:1px 6px;border-radius:4px;background:var(--bg-3);color:var(--text-3);font-size:.6rem;font-weight:600;letter-spacing:.02em}
+.set-row-tag.acc{background:var(--acc-soft);color:var(--acc)}
+.set-row-s{font-size:.74rem;color:var(--text-3);margin-top:3px;line-height:1.45}
+
+/* Toggle */
+.tog{
+  width:38px;height:22px;border-radius:12px;
+  background:var(--bg-4);border:1px solid var(--line-2);
+  cursor:pointer;position:relative;transition:background .2s var(--ease),border-color .2s;flex-shrink:0;
+}
+.tog::after{
+  content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;
+  background:#fff;transition:left .2s var(--ease);
+  box-shadow:0 1px 2px rgba(0,0,0,.3);
+}
+.tog.on{background:var(--acc);border-color:var(--acc)}
+.tog.on::after{left:18px}
+
+/* Select */
+.sel{
+  background:var(--bg-3);border:1px solid var(--line-2);border-radius:8px;
+  color:var(--text);padding:7px 10px;font-family:'Inter',sans-serif;font-size:.78rem;font-weight:500;
+  cursor:pointer;outline:none;min-width:108px;transition:border-color .15s;
+  -moz-appearance:none;
+       appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a1a1aa' stroke-width='2.5' stroke-linecap='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat:no-repeat;background-position:right 8px center;padding-right:26px;
+}
+.sel:focus{border-color:var(--acc-line)}
+
+/* Edit row (inline editable) */
+.edit-row{padding:14px 22px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.edit-row:first-of-type{border-top:none}
+.edit-row-l{font-size:.82rem;font-weight:500;color:var(--text)}
+.edit-row-s{font-size:.72rem;color:var(--text-3);margin-bottom:4px}
+.edit-input{
+  width:100%;background:var(--bg-2);border:1px solid var(--line-2);border-radius:8px;
+  padding:9px 11px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.8rem;outline:none;transition:border-color .15s,box-shadow .15s;
+}
+.edit-input:focus{border-color:var(--acc-line);box-shadow:0 0 0 3px var(--acc-soft)}
+.edit-input.with-prefix{padding-left:30px}
+.edit-prefix-wrap{position:relative}
+.edit-prefix{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--acc);font-family:'JetBrains Mono',monospace;font-weight:600;font-size:.85rem;pointer-events:none}
+.edit-actions{display:flex;gap:6px;justify-content:flex-end;margin-top:2px}
+.edit-btn{
+  padding:7px 13px;border-radius:7px;border:1px solid var(--line-2);
+  background:var(--bg-2);color:var(--text-2);font-family:'Inter',sans-serif;font-size:.74rem;font-weight:500;cursor:pointer;transition:all .14s;
+}
+.edit-btn:hover{color:var(--text);border-color:var(--line-3);background:var(--bg-3)}
+.edit-btn.primary{background:var(--acc);color:#fff;border-color:var(--acc)}
+.edit-btn.primary:hover{background:var(--acc-2);border-color:var(--acc-2)}
+
+/* Sign out */
+.set-foot{padding:16px 22px;border-top:1px solid var(--line);background:var(--bg-1)}
+
+/* Custom security rule add row */
+.cr-add{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.cr-add-l{font-size:.78rem;color:var(--text-2);font-weight:500}
+.cr-add-s{font-size:.72rem;color:var(--text-3);line-height:1.45;margin-top:-2px}
+.cr-add-row{display:flex;gap:8px}
+.cr-add-input{
+  flex:1;background:var(--bg-2);border:1px solid var(--line-2);border-radius:8px;
+  padding:9px 12px;color:var(--text);font-family:'Inter',sans-serif;font-size:.82rem;outline:none;transition:border-color .15s,box-shadow .15s;
+}
+.cr-add-input:focus{border-color:var(--acc-line);box-shadow:0 0 0 3px var(--acc-soft)}
+.cr-add-input::-moz-placeholder{color:var(--text-4)}
+.cr-add-input::placeholder{color:var(--text-4)}
+.cr-add-btn{
+  padding:9px 14px;border-radius:8px;border:none;background:var(--acc);color:#fff;
+  font-family:'Inter',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:6px;transition:background .15s;
+  white-space:nowrap;
+}
+.cr-add-btn:hover{background:var(--acc-2)}
+.cr-add-btn svg{width:13px;height:13px}
+
+/* Custom rule row */
+.cr-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 18px;border-bottom:1px solid var(--line)}
+.cr-row-info{flex:1;min-width:0}
+.cr-row-l{font-size:.84rem;font-weight:500;color:var(--text);display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.cr-row-tag{display:inline-block;padding:1px 6px;border-radius:4px;background:var(--acc-soft);color:var(--acc);font-size:.6rem;font-weight:600;letter-spacing:.02em}
+.cr-row-s{font-size:.72rem;color:var(--text-3);margin-top:3px}
+.cr-row-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.cr-del{
+  width:28px;height:28px;border-radius:7px;background:transparent;border:1px solid var(--line-2);
+  color:var(--text-3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.cr-del:hover{background:var(--danger-soft);color:var(--danger);border-color:rgba(244,63,94,.3)}
+.cr-empty{padding:20px 18px;text-align:center;font-size:.74rem;color:var(--text-3)}
+
+/* Transfer modal */
+.modal-overlay{
+  position:fixed;inset:0;z-index:300;
+  background:rgba(0,0,0,.6);backdrop-filter:blur(6px);
+  opacity:0;pointer-events:none;transition:opacity .25s var(--ease);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.modal-overlay.show{opacity:1;pointer-events:all}
+.modal{
+  width:100%;max-width:440px;background:var(--bg-1);border:1px solid var(--line-2);
+  border-radius:var(--r-2xl);overflow:hidden;
+  box-shadow:0 24px 60px -16px rgba(0,0,0,.7);
+  transform:translateY(12px) scale(.97);transition:transform .3s var(--ease);
+}
+.modal-overlay.show .modal{transform:none}
+.modal-hdr{padding:20px 24px 14px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.modal-h-wrap{display:flex;align-items:center;gap:11px}
+.modal-h-ico{
+  width:36px;height:36px;border-radius:10px;
+  background:rgba(139,92,246,.15);border:1px solid var(--acc-line);
+  display:flex;align-items:center;justify-content:center;color:var(--acc);
+}
+.modal-h-ico svg{width:17px;height:17px}
+.modal-h{font-size:1.02rem;font-weight:700;letter-spacing:-.01em;line-height:1.2}
+.modal-h-sub{font-size:.74rem;color:var(--text-3);margin-top:2px}
+.modal-body{padding:6px 24px 22px}
+.modal-foot{padding:14px 24px;border-top:1px solid var(--line);background:var(--bg-2);display:flex;gap:8px;justify-content:flex-end}
+.modal-foot .btn{width:auto;flex:0 0 auto}
+.modal-foot .btn-primary{padding-left:22px;padding-right:22px}
+.modal-foot .btn-ghost{padding-left:18px;padding-right:18px}
+
+/* ================= TOASTS ================= */
+#toasts{position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:9000;pointer-events:none}
+.toast{
+  display:flex;align-items:center;gap:11px;padding:12px 16px;
+  background:var(--bg-2);border:1px solid var(--line-2);border-radius:var(--r-md);
+  box-shadow:0 12px 32px -8px rgba(0,0,0,.5);min-width:240px;max-width:340px;
+  pointer-events:all;animation:toastIn .28s var(--ease) both;
+}
+.toast.out{animation:toastOut .22s ease both}
+.toast-ico{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.toast-ok .toast-ico{background:var(--success-soft);color:var(--success)}
+.toast-err .toast-ico{background:var(--danger-soft);color:var(--danger)}
+.toast-info .toast-ico{background:var(--acc-soft);color:var(--acc)}
+.toast-warn .toast-ico{background:var(--warn-soft);color:var(--warn)}
+.toast-body{flex:1;min-width:0}
+.toast-t{font-size:.8rem;font-weight:600;color:var(--text)}
+.toast-m{font-size:.72rem;color:var(--text-3);margin-top:2px;line-height:1.4}
+
+@media(max-width:600px){
+  .auth-card{padding:26px 22px}
+  .auth-h{font-size:1.2rem}
+  .transfer-top{flex-direction:column;align-items:flex-start;gap:8px}
+  .dash-body{padding:20px 16px 60px}
+  .dash-hdr{padding:0 16px;height:58px}
+  .set-panel{width:100%}
+  #toasts{bottom:14px;right:14px;left:14px}
+  .toast{min-width:0;max-width:100%}
+}
+</style>
+  <script type="module">"use strict";(()=>{var P="0.4.4";var v={HIGHLIGHT_COLOR:"#0079F2",HIGHLIGHT_BG:"#0079F210",ALLOWED_DOMAIN:".replit.dev",THEME_PREVIEW_STYLE_ID:"replit-theme-preview",MAX_SIBLING_HIGHLIGHTERS:1e3,MAX_DESCENDANTS_FOR_SCREENSHOT:1500},Z=`
+  [contenteditable] {
+    outline: none !important;
+  }
+
+  [contenteditable]:focus {
+    outline: none !important;
+  }
+`,ee=`
+  .beacon-highlighter {
+    content: '';
+    position: absolute;
+    z-index: ${Number.MAX_SAFE_INTEGER-3};
+    box-sizing: border-box;
+    pointer-events: none;
+    outline: 2px dashed ${v.HIGHLIGHT_COLOR} !important;
+    outline-offset: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
+    background: ${v.HIGHLIGHT_BG} !important;
+    opacity: 0;
+  }
+  
+  .beacon-hover-highlighter {
+    position: fixed;
+    z-index: ${Number.MAX_SAFE_INTEGER};
+  }
+  
+  .beacon-selected-highlighter {
+    position: fixed;
+    pointer-events: none;
+    outline: 2px solid ${v.HIGHLIGHT_COLOR} !important;
+    outline-offset: 3px !important;
+    background: none !important;
+  }
+  
+  .beacon-label {
+    position: absolute;
+    background-color: ${v.HIGHLIGHT_COLOR};
+    color: #FFFFFF;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: monospace;
+    line-height: 1;
+    white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transform: translateY(-100%);
+    margin-top: -4px;
+    left: 0;
+    z-index: ${Number.MAX_SAFE_INTEGER-2};
+    pointer-events: none;
+    opacity: 0;
+  }
+  
+  .beacon-hover-label {
+    position: fixed;
+    z-index: ${Number.MAX_SAFE_INTEGER};
+  }
+  
+  .beacon-selected-label {
+    position: fixed;
+    pointer-events: none;
+  }
+  
+  .beacon-sibling-highlighter {
+    position: fixed;
+    pointer-events: none;
+    outline: 2px dashed ${v.HIGHLIGHT_COLOR} !important;
+    outline-offset: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
+    background: ${v.HIGHLIGHT_BG} !important;
+  }
+`;function Me(e,i){return e[13]=1,e[14]=i>>8,e[15]=i&255,e[16]=i>>8,e[17]=i&255,e}var le=112,ae=72,ce=89,he=115,G;function Re(){let e=new Int32Array(256);for(let i=0;i<256;i++){let t=i;for(let n=0;n<8;n++)t=t&1?3988292384^t>>>1:t>>>1;e[i]=t}return e}function De(e){let i=-1;G||(G=Re());for(let t=0;t<e.length;t++)i=G[(i^e[t])&255]^i>>>8;return i^-1}function Oe(e){let i=e.length-1;for(let t=i;t>=4;t--)if(e[t-4]===9&&e[t-3]===le&&e[t-2]===ae&&e[t-1]===ce&&e[t]===he)return t-3;return 0}function Pe(e,i,t=!1){let n=new Uint8Array(13);i*=39.3701,n[0]=le,n[1]=ae,n[2]=ce,n[3]=he,n[4]=i>>>24,n[5]=i>>>16,n[6]=i>>>8,n[7]=i&255,n[8]=n[4],n[9]=n[5],n[10]=n[6],n[11]=n[7],n[12]=1;let s=De(n),r=new Uint8Array(4);if(r[0]=s>>>24,r[1]=s>>>16,r[2]=s>>>8,r[3]=s&255,t){let l=Oe(e);return e.set(n,l),e.set(r,l+13),e}else{let l=new Uint8Array(4);l[0]=0,l[1]=0,l[2]=0,l[3]=9;let o=new Uint8Array(54);return o.set(e,0),o.set(l,33),o.set(n,37),o.set(r,50),o}}var de="[modern-screenshot]",H=typeof window<"u",Fe=H&&"Worker"in window,ke=H&&"atob"in window,Yt=H&&"btoa"in window,V=H?window.navigator?.userAgent:"",ue=V.includes("Chrome"),F=V.includes("AppleWebKit")&&!ue,j=V.includes("Firefox"),Ue=e=>e&&"__CONTEXT__"in e,$e=e=>e.constructor.name==="CSSFontFaceRule",Be=e=>e.constructor.name==="CSSImportRule",S=e=>e.nodeType===1,N=e=>typeof e.className=="object",ge=e=>e.tagName==="image",Ge=e=>e.tagName==="use",x=e=>S(e)&&typeof e.style<"u"&&!N(e),We=e=>e.nodeType===8,Ve=e=>e.nodeType===3,L=e=>e.tagName==="IMG",k=e=>e.tagName==="VIDEO",je=e=>e.tagName==="CANVAS",qe=e=>e.tagName==="TEXTAREA",ze=e=>e.tagName==="INPUT",Xe=e=>e.tagName==="STYLE",Ye=e=>e.tagName==="SCRIPT",Ke=e=>e.tagName==="SELECT",Je=e=>e.tagName==="SLOT",Qe=e=>e.tagName==="IFRAME",Ze=(...e)=>console.warn(de,...e);function et(e){let i=e?.createElement?.("canvas");return i&&(i.height=i.width=1),!!i&&"toDataURL"in i&&!!i.toDataURL("image/webp").includes("image/webp")}var W=e=>e.startsWith("data:");function me(e,i){if(e.match(/^[a-z]+:\/\//i))return e;if(H&&e.match(/^\/\//))return window.location.protocol+e;if(e.match(/^[a-z]+:/i)||!H)return e;let t=U().implementation.createHTMLDocument(),n=t.createElement("base"),s=t.createElement("a");return t.head.appendChild(n),t.body.appendChild(s),i&&(n.href=i),s.href=e,s.href}function U(e){return(e&&S(e)?e?.ownerDocument:e)??window.document}var $="http://www.w3.org/2000/svg";function tt(e,i,t){let n=U(t).createElementNS($,"svg");return n.setAttributeNS(null,"width",e.toString()),n.setAttributeNS(null,"height",i.toString()),n.setAttributeNS(null,"viewBox",`0 0 ${e} ${i}`),n}function it(e,i){let t=new XMLSerializer().serializeToString(e);return i&&(t=t.replace(/[\u0000-\u0008\v\f\u000E-\u001F\uD800-\uDFFF\uFFFE\uFFFF]/gu,"")),`data:image/svg+xml;charset=utf-8,${encodeURIComponent(t)}`}async function nt(e,i="image/png",t=1){try{return await new Promise((n,s)=>{e.toBlob(r=>{r?n(r):s(new Error("Blob is null"))},i,t)})}catch(n){if(ke)return rt(e.toDataURL(i,t));throw n}}function rt(e){let[i,t]=e.split(","),n=i.match(/data:(.+);/)?.[1]??void 0,s=window.atob(t),r=s.length,l=new Uint8Array(r);for(let o=0;o<r;o+=1)l[o]=s.charCodeAt(o);return new Blob([l],{type:n})}function fe(e,i){return new Promise((t,n)=>{let s=new FileReader;s.onload=()=>t(s.result),s.onerror=()=>n(s.error),s.onabort=()=>n(new Error(`Failed read blob to ${i}`)),i==="dataUrl"?s.readAsDataURL(e):i==="arrayBuffer"&&s.readAsArrayBuffer(e)})}var st=e=>fe(e,"dataUrl"),ot=e=>fe(e,"arrayBuffer");function C(e,i){let t=U(i).createElement("img");return t.decoding="sync",t.loading="eager",t.src=e,t}function _(e,i){return new Promise(t=>{let{timeout:n,ownerDocument:s,onError:r,onWarn:l}=i??{},o=typeof e=="string"?C(e,U(s)):e,c=null,h=null;function a(){t(o),c&&clearTimeout(c),h?.()}if(n&&(c=setTimeout(a,n)),k(o)){let d=o.currentSrc||o.src;if(!d)return o.poster?_(o.poster,i).then(t):a();if(o.readyState>=2)return a();let u=a,m=g=>{l?.("Failed video load",d,g),r?.(g),a()};h=()=>{o.removeEventListener("loadeddata",u),o.removeEventListener("error",m)},o.addEventListener("loadeddata",u,{once:!0}),o.addEventListener("error",m,{once:!0})}else{let d=ge(o)?o.href.baseVal:o.currentSrc||o.src;if(!d)return a();let u=async()=>{if(L(o)&&"decode"in o)try{await o.decode()}catch(g){l?.("Failed to decode image, trying to render anyway",o.dataset.originalSrc||d,g)}a()},m=g=>{l?.("Failed image load",o.dataset.originalSrc||d,g),a()};if(L(o)&&o.complete)return u();h=()=>{o.removeEventListener("load",u),o.removeEventListener("error",m)},o.addEventListener("load",u,{once:!0}),o.addEventListener("error",m,{once:!0})}})}async function lt(e,i){x(e)&&(L(e)||k(e)?await _(e,i):await Promise.all(["img","video"].flatMap(t=>Array.from(e.querySelectorAll(t)).map(n=>_(n,i)))))}var pe=function(){let i=0,t=()=>`0000${(Math.random()*36**4<<0).toString(36)}`.slice(-4);return()=>(i+=1,`u${t()}${i}`)}();function be(e){return e?.split(",").map(i=>i.trim().replace(/"|'/g,"").toLowerCase()).filter(Boolean)}var te=0;function at(e){let i=`${de}[#${te}]`;return te++,{time:t=>e&&console.time(`${i} ${t}`),timeEnd:t=>e&&console.timeEnd(`${i} ${t}`),warn:(...t)=>e&&Ze(...t)}}function ct(e){return{cache:e?"no-cache":"force-cache"}}async function q(e,i){return Ue(e)?e:ht(e,{...i,autoDestruct:!0})}async function ht(e,i){let{scale:t=1,workerUrl:n,workerNumber:s=1}=i||{},r=!!i?.debug,l=i?.features??!0,o=e.ownerDocument??(H?window.document:void 0),c=e.ownerDocument?.defaultView??(H?window:void 0),h=new Map,a={width:0,height:0,quality:1,type:"image/png",scale:t,backgroundColor:null,style:null,filter:null,maximumCanvasSize:0,timeout:3e4,progress:null,debug:r,fetch:{requestInit:ct(i?.fetch?.bypassingCache),placeholderImage:"data:image/png;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",bypassingCache:!1,...i?.fetch},fetchFn:null,font:{},drawImageInterval:100,workerUrl:null,workerNumber:s,onCloneNode:null,onEmbedNode:null,onCreateForeignObjectSvg:null,includeStyleProperties:null,autoDestruct:!1,...i,__CONTEXT__:!0,log:at(r),node:e,ownerDocument:o,ownerWindow:c,dpi:t===1?null:96*t,svgStyleElement:Ee(o),svgDefsElement:o?.createElementNS($,"defs"),svgStyles:new Map,defaultComputedStyles:new Map,workers:[...Array.from({length:Fe&&n&&s?s:0})].map(()=>{try{let m=new Worker(n);return m.onmessage=async g=>{let{url:f,result:p}=g.data;p?h.get(f)?.resolve?.(p):h.get(f)?.reject?.(new Error(`Error receiving message from worker: ${f}`))},m.onmessageerror=g=>{let{url:f}=g.data;h.get(f)?.reject?.(new Error(`Error receiving message from worker: ${f}`))},m}catch(m){return a.log.warn("Failed to new Worker",m),null}}).filter(Boolean),fontFamilies:new Map,fontCssTexts:new Map,acceptOfImage:`${[et(o)&&"image/webp","image/svg+xml","image/*","*/*"].filter(Boolean).join(",")};q=0.8`,requests:h,drawImageCount:0,tasks:[],features:l,isEnable:m=>m==="restoreScrollPosition"?typeof l=="boolean"?!1:l[m]??!1:typeof l=="boolean"?l:l[m]??!0};a.log.time("wait until load"),await lt(e,{timeout:a.timeout,onWarn:a.log.warn}),a.log.timeEnd("wait until load");let{width:d,height:u}=dt(e,a);return a.width=d,a.height=u,a}function Ee(e){if(!e)return;let i=e.createElement("style"),t=i.ownerDocument.createTextNode(`
+.______background-clip--text {
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+`);return i.appendChild(t),i}function dt(e,i){let{width:t,height:n}=i;if(S(e)&&(!t||!n)){let s=e.getBoundingClientRect();t=t||s.width||Number(e.getAttribute("width"))||0,n=n||s.height||Number(e.getAttribute("height"))||0}return{width:t,height:n}}async function ut(e,i){let{log:t,timeout:n,drawImageCount:s,drawImageInterval:r}=i;t.time("image to canvas");let l=await _(e,{timeout:n,onWarn:i.log.warn}),{canvas:o,context2d:c}=gt(e.ownerDocument,i),h=()=>{try{c?.drawImage(l,0,0,o.width,o.height)}catch(a){i.log.warn("Failed to drawImage",a)}};if(h(),i.isEnable("fixSvgXmlDecode"))for(let a=0;a<s;a++)await new Promise(d=>{setTimeout(()=>{h(),d()},a+r)});return i.drawImageCount=0,t.timeEnd("image to canvas"),o}function gt(e,i){let{width:t,height:n,scale:s,backgroundColor:r,maximumCanvasSize:l}=i,o=e.createElement("canvas");o.width=Math.floor(t*s),o.height=Math.floor(n*s),o.style.width=`${t}px`,o.style.height=`${n}px`,l&&(o.width>l||o.height>l)&&(o.width>l&&o.height>l?o.width>o.height?(o.height*=l/o.width,o.width=l):(o.width*=l/o.height,o.height=l):o.width>l?(o.height*=l/o.width,o.width=l):(o.width*=l/o.height,o.height=l));let c=o.getContext("2d");return c&&r&&(c.fillStyle=r,c.fillRect(0,0,o.width,o.height)),{canvas:o,context2d:c}}function ve(e,i){if(e.ownerDocument)try{let r=e.toDataURL();if(r!=="data:,")return C(r,e.ownerDocument)}catch(r){i.log.warn("Failed to clone canvas",r)}let t=e.cloneNode(!1),n=e.getContext("2d"),s=t.getContext("2d");try{return n&&s&&s.putImageData(n.getImageData(0,0,e.width,e.height),0,0),t}catch(r){i.log.warn("Failed to clone canvas",r)}return t}function mt(e,i){try{if(e?.contentDocument?.body)return z(e.contentDocument.body,i)}catch(t){i.log.warn("Failed to clone iframe",t)}return e.cloneNode(!1)}function ft(e){let i=e.cloneNode(!1);return e.currentSrc&&e.currentSrc!==e.src&&(i.src=e.currentSrc,i.srcset=""),i.loading==="lazy"&&(i.loading="eager"),i}async function pt(e,i){if(e.ownerDocument&&!e.currentSrc&&e.poster)return C(e.poster,e.ownerDocument);let t=e.cloneNode(!1);t.crossOrigin="anonymous",e.currentSrc&&e.currentSrc!==e.src&&(t.src=e.currentSrc);let n=t.ownerDocument;if(n){let s=!0;if(await _(t,{onError:()=>s=!1,onWarn:i.log.warn}),!s)return e.poster?C(e.poster,e.ownerDocument):t;t.currentTime=e.currentTime,await new Promise(l=>{t.addEventListener("seeked",l,{once:!0})});let r=n.createElement("canvas");r.width=e.offsetWidth,r.height=e.offsetHeight;try{let l=r.getContext("2d");l&&l.drawImage(t,0,0,r.width,r.height)}catch(l){return i.log.warn("Failed to clone video",l),e.poster?C(e.poster,e.ownerDocument):t}return ve(r,i)}return t}function bt(e,i){return je(e)?ve(e,i):Qe(e)?mt(e,i):L(e)?ft(e):k(e)?pt(e,i):e.cloneNode(!1)}function Et(e){let i=e.sandbox;if(!i){let{ownerDocument:t}=e;try{t&&(i=t.createElement("iframe"),i.id=`__SANDBOX__-${pe()}`,i.width="0",i.height="0",i.style.visibility="hidden",i.style.position="fixed",t.body.appendChild(i),i.contentWindow?.document.write('<!DOCTYPE html><meta charset="UTF-8"><title></title><body>'),e.sandbox=i)}catch(n){e.log.warn("Failed to getSandBox",n)}}return i}var vt=["width","height","-webkit-text-fill-color"],wt=["stroke","fill"];function we(e,i,t){let{defaultComputedStyles:n}=t,s=e.nodeName.toLowerCase(),r=N(e)&&s!=="svg",l=r?wt.map(f=>[f,e.getAttribute(f)]).filter(([,f])=>f!==null):[],o=[r&&"svg",s,l.map((f,p)=>`${f}=${p}`).join(","),i].filter(Boolean).join(":");if(n.has(o))return n.get(o);let h=Et(t)?.contentWindow;if(!h)return new Map;let a=h?.document,d,u;r?(d=a.createElementNS($,"svg"),u=d.ownerDocument.createElementNS(d.namespaceURI,s),l.forEach(([f,p])=>{u.setAttributeNS(null,f,p)}),d.appendChild(u)):d=u=a.createElement(s),u.textContent=" ",a.body.appendChild(d);let m=h.getComputedStyle(u,i),g=new Map;for(let f=m.length,p=0;p<f;p++){let b=m.item(p);vt.includes(b)||g.set(b,m.getPropertyValue(b))}return a.body.removeChild(d),n.set(o,g),g}function ye(e,i,t){let n=new Map,s=[],r=new Map;if(t)for(let o of t)l(o);else for(let o=e.length,c=0;c<o;c++){let h=e.item(c);l(h)}for(let o=s.length,c=0;c<o;c++)r.get(s[c])?.forEach((h,a)=>n.set(a,h));function l(o){let c=e.getPropertyValue(o),h=e.getPropertyPriority(o),a=o.lastIndexOf("-"),d=a>-1?o.substring(0,a):void 0;if(d){let u=r.get(d);u||(u=new Map,r.set(d,u)),u.set(o,[c,h])}i.get(o)===c&&!h||(d?s.push(d):n.set(o,[c,h]))}return n}function yt(e,i,t,n){let{ownerWindow:s,includeStyleProperties:r,currentParentNodeStyle:l}=n,o=i.style,c=s.getComputedStyle(e),h=we(e,null,n);l?.forEach((d,u)=>{h.delete(u)});let a=ye(c,h,r);a.delete("transition-property"),a.delete("all"),a.delete("d"),a.delete("content"),t&&(a.delete("margin-top"),a.delete("margin-right"),a.delete("margin-bottom"),a.delete("margin-left"),a.delete("margin-block-start"),a.delete("margin-block-end"),a.delete("margin-inline-start"),a.delete("margin-inline-end"),a.set("box-sizing",["border-box",""])),a.get("background-clip")?.[0]==="text"&&i.classList.add("______background-clip--text"),ue&&(a.has("font-kerning")||a.set("font-kerning",["normal",""]),(a.get("overflow-x")?.[0]==="hidden"||a.get("overflow-y")?.[0]==="hidden")&&a.get("text-overflow")?.[0]==="ellipsis"&&e.scrollWidth===e.clientWidth&&a.set("text-overflow",["clip",""]));for(let d=o.length,u=0;u<d;u++)o.removeProperty(o.item(u));return a.forEach(([d,u],m)=>{o.setProperty(m,d,u)}),a}function St(e,i){(qe(e)||ze(e)||Ke(e))&&i.setAttribute("value",e.value)}var Tt=[":before",":after"],At=[":-webkit-scrollbar",":-webkit-scrollbar-button",":-webkit-scrollbar-thumb",":-webkit-scrollbar-track",":-webkit-scrollbar-track-piece",":-webkit-scrollbar-corner",":-webkit-resizer"];function Ht(e,i,t,n,s){let{ownerWindow:r,svgStyleElement:l,svgStyles:o,currentNodeStyle:c}=n;if(!l||!r)return;function h(a){let d=r.getComputedStyle(e,a),u=d.getPropertyValue("content");if(!u||u==="none")return;s?.(u),u=u.replace(/(')|(")|(counter\(.+\))/g,"");let m=[pe()],g=we(e,a,n);c?.forEach((E,y)=>{g.delete(y)});let f=ye(d,g,n.includeStyleProperties);f.delete("content"),f.delete("-webkit-locale"),f.get("background-clip")?.[0]==="text"&&i.classList.add("______background-clip--text");let p=[`content: '${u}';`];if(f.forEach(([E,y],A)=>{p.push(`${A}: ${E}${y?" !important":""};`)}),p.length===1)return;try{i.className=[i.className,...m].join(" ")}catch(E){n.log.warn("Failed to copyPseudoClass",E);return}let b=p.join(`
+  `),w=o.get(b);w||(w=[],o.set(b,w)),w.push(`.${m[0]}:${a}`)}Tt.forEach(h),t&&At.forEach(h)}var ie=new Set(["symbol"]);async function ne(e,i,t,n,s){if(S(t)&&(Xe(t)||Ye(t))||n.filter&&!n.filter(t))return;ie.has(i.nodeName)||ie.has(t.nodeName)?n.currentParentNodeStyle=void 0:n.currentParentNodeStyle=n.currentNodeStyle;let r=await z(t,n,!1,s);n.isEnable("restoreScrollPosition")&&Ct(e,r),i.appendChild(r)}async function re(e,i,t,n){let s=(S(e)?e.shadowRoot?.firstChild:void 0)??e.firstChild;for(let r=s;r;r=r.nextSibling)if(!We(r))if(S(r)&&Je(r)&&typeof r.assignedNodes=="function"){let l=r.assignedNodes();for(let o=0;o<l.length;o++)await ne(e,i,l[o],t,n)}else await ne(e,i,r,t,n)}function Ct(e,i){if(!x(e)||!x(i))return;let{scrollTop:t,scrollLeft:n}=e;if(!t&&!n)return;let{transform:s}=i.style,r=new DOMMatrix(s),{a:l,b:o,c,d:h}=r;r.a=1,r.b=0,r.c=0,r.d=1,r.translateSelf(-n,-t),r.a=l,r.b=o,r.c=c,r.d=h,i.style.transform=r.toString()}function Lt(e,i){let{backgroundColor:t,width:n,height:s,style:r}=i,l=e.style;if(t&&l.setProperty("background-color",t,"important"),n&&l.setProperty("width",`${n}px`,"important"),s&&l.setProperty("height",`${s}px`,"important"),r)for(let o in r)l[o]=r[o]}var xt=/^[\w-:]+$/;async function z(e,i,t=!1,n){let{ownerDocument:s,ownerWindow:r,fontFamilies:l}=i;if(s&&Ve(e))return n&&/\S/.test(e.data)&&n(e.data),s.createTextNode(e.data);if(s&&r&&S(e)&&(x(e)||N(e))){let c=await bt(e,i);if(i.isEnable("removeAbnormalAttributes")){let g=c.getAttributeNames();for(let f=g.length,p=0;p<f;p++){let b=g[p];xt.test(b)||c.removeAttribute(b)}}let h=i.currentNodeStyle=yt(e,c,t,i);t&&Lt(c,i);let a=!1;if(i.isEnable("copyScrollbar")){let g=[h.get("overflow-x")?.[0],h.get("overflow-y")?.[0]];a=g.includes("scroll")||(g.includes("auto")||g.includes("overlay"))&&(e.scrollHeight>e.clientHeight||e.scrollWidth>e.clientWidth)}let d=h.get("text-transform")?.[0],u=be(h.get("font-family")?.[0]),m=u?g=>{d==="uppercase"?g=g.toUpperCase():d==="lowercase"?g=g.toLowerCase():d==="capitalize"&&(g=g[0].toUpperCase()+g.substring(1)),u.forEach(f=>{let p=l.get(f);p||l.set(f,p=new Set),g.split("").forEach(b=>p.add(b))})}:void 0;return Ht(e,c,a,i,m),St(e,c),k(e)||await re(e,c,i,m),c}let o=e.cloneNode(!1);return await re(e,o,i),o}function _t(e){if(e.ownerDocument=void 0,e.ownerWindow=void 0,e.svgStyleElement=void 0,e.svgDefsElement=void 0,e.svgStyles.clear(),e.defaultComputedStyles.clear(),e.sandbox){try{e.sandbox.remove()}catch(i){e.log.warn("Failed to destroyContext",i)}e.sandbox=void 0}e.workers=[],e.fontFamilies.clear(),e.fontCssTexts.clear(),e.requests.clear(),e.tasks=[]}function It(e){let{url:i,timeout:t,responseType:n,...s}=e,r=new AbortController,l=t?setTimeout(()=>r.abort(),t):void 0;return fetch(i,{signal:r.signal,...s}).then(o=>{if(!o.ok)throw new Error("Failed fetch, not 2xx response",{cause:o});switch(n){case"arrayBuffer":return o.arrayBuffer();case"dataUrl":return o.blob().then(st);case"text":default:return o.text()}}).finally(()=>clearTimeout(l))}function I(e,i){let{url:t,requestType:n="text",responseType:s="text",imageDom:r}=i,l=t,{timeout:o,acceptOfImage:c,requests:h,fetchFn:a,fetch:{requestInit:d,bypassingCache:u,placeholderImage:m},font:g,workers:f,fontFamilies:p}=e;n==="image"&&(F||j)&&e.drawImageCount++;let b=h.get(t);if(!b){u&&u instanceof RegExp&&u.test(l)&&(l+=(/\?/.test(l)?"&":"?")+new Date().getTime());let w=n.startsWith("font")&&g&&g.minify,E=new Set;w&&n.split(";")[1].split(",").forEach(O=>{p.has(O)&&p.get(O).forEach(Q=>E.add(Q))});let y=w&&E.size,A={url:l,timeout:o,responseType:y?"arrayBuffer":s,headers:n==="image"?{accept:c}:void 0,...d};b={type:n,resolve:void 0,reject:void 0,response:null},b.response=(async()=>{if(a&&n==="image"){let T=await a(t);if(T)return T}return!F&&t.startsWith("http")&&f.length?new Promise((T,O)=>{f[h.size&f.length-1].postMessage({rawUrl:t,...A}),b.resolve=T,b.reject=O}):It(A)})().catch(T=>{if(h.delete(t),n==="image"&&m)return e.log.warn("Failed to fetch image base64, trying to use placeholder image",l),typeof m=="string"?m:m(r);throw T}),h.set(t,b)}return b.response}async function Se(e,i,t,n){if(!Te(e))return e;for(let[s,r]of Nt(e,i))try{let l=await I(t,{url:r,requestType:n?"image":"text",responseType:"dataUrl"});e=e.replace(Mt(s),`$1${l}$3`)}catch(l){t.log.warn("Failed to fetch css data url",s,l)}return e}function Te(e){return/url\((['"]?)([^'"]+?)\1\)/.test(e)}var Ae=/url\((['"]?)([^'"]+?)\1\)/g;function Nt(e,i){let t=[];return e.replace(Ae,(n,s,r)=>(t.push([r,me(r,i)]),n)),t.filter(([n])=>!W(n))}function Mt(e){let i=e.replace(/([.*+?^${}()|\[\]\/\\])/g,"\\$1");return new RegExp(`(url\\(['"]?)(${i})(['"]?\\))`,"g")}var Rt=["background-image","border-image-source","-webkit-border-image","-webkit-mask-image","list-style-image"];function Dt(e,i){return Rt.map(t=>{let n=e.getPropertyValue(t);return!n||n==="none"?null:((F||j)&&i.drawImageCount++,Se(n,null,i,!0).then(s=>{!s||n===s||e.setProperty(t,s,e.getPropertyPriority(t))}))}).filter(Boolean)}function Ot(e,i){if(L(e)){let t=e.currentSrc||e.src;if(!W(t))return[I(i,{url:t,imageDom:e,requestType:"image",responseType:"dataUrl"}).then(n=>{n&&(e.srcset="",e.dataset.originalSrc=t,e.src=n||"")})];(F||j)&&i.drawImageCount++}else if(N(e)&&!W(e.href.baseVal)){let t=e.href.baseVal;return[I(i,{url:t,imageDom:e,requestType:"image",responseType:"dataUrl"}).then(n=>{n&&(e.dataset.originalSrc=t,e.href.baseVal=n||"")})]}return[]}function Pt(e,i){let{ownerDocument:t,svgDefsElement:n}=i,s=e.getAttribute("href")??e.getAttribute("xlink:href");if(!s)return[];let[r,l]=s.split("#");if(l){let o=`#${l}`,c=t?.querySelector(`svg ${o}`);if(r&&e.setAttribute("href",o),n?.querySelector(o))return[];if(c)return n?.appendChild(c.cloneNode(!0)),[];if(r)return[I(i,{url:r,responseType:"text"}).then(h=>{n?.insertAdjacentHTML("beforeend",h)})]}return[]}function He(e,i){let{tasks:t}=i;S(e)&&((L(e)||ge(e))&&t.push(...Ot(e,i)),Ge(e)&&t.push(...Pt(e,i))),x(e)&&t.push(...Dt(e.style,i)),e.childNodes.forEach(n=>{He(n,i)})}async function Ft(e,i){let{ownerDocument:t,svgStyleElement:n,fontFamilies:s,fontCssTexts:r,tasks:l,font:o}=i;if(!(!t||!n||!s.size))if(o&&o.cssText){let c=oe(o.cssText,i);n.appendChild(t.createTextNode(`${c}
+`))}else{let c=Array.from(t.styleSheets).filter(a=>{try{return"cssRules"in a&&!!a.cssRules.length}catch(d){return i.log.warn(`Error while reading CSS rules from ${a.href}`,d),!1}});await Promise.all(c.flatMap(a=>Array.from(a.cssRules).map(async(d,u)=>{if(Be(d)){let m=u+1,g=d.href,f="";try{f=await I(i,{url:g,requestType:"text",responseType:"text"})}catch(b){i.log.warn(`Error fetch remote css import from ${g}`,b)}let p=f.replace(Ae,(b,w,E)=>b.replace(E,me(E,g)));for(let b of Ut(p))try{a.insertRule(b,b.startsWith("@import")?m+=1:a.cssRules.length)}catch(w){i.log.warn("Error inserting rule from remote css import",{rule:b,error:w})}}}))),c.flatMap(a=>Array.from(a.cssRules)).filter(a=>$e(a)&&Te(a.style.getPropertyValue("src"))&&be(a.style.getPropertyValue("font-family"))?.some(d=>s.has(d))).forEach(a=>{let d=a,u=r.get(d.cssText);u?n.appendChild(t.createTextNode(`${u}
+`)):l.push(Se(d.cssText,d.parentStyleSheet?d.parentStyleSheet.href:null,i).then(m=>{m=oe(m,i),r.set(d.cssText,m),n.appendChild(t.createTextNode(`${m}
+`))}))})}}var kt=/(\/\*[\s\S]*?\*\/)/g,se=/((@.*?keyframes [\s\S]*?){([\s\S]*?}\s*?)})/gi;function Ut(e){if(e==null)return[];let i=[],t=e.replace(kt,"");for(;;){let r=se.exec(t);if(!r)break;i.push(r[0])}t=t.replace(se,"");let n=/@import[\s\S]*?url\([^)]*\)[\s\S]*?;/gi,s=new RegExp("((\\s*?(?:\\/\\*[\\s\\S]*?\\*\\/)?\\s*?@media[\\s\\S]*?){([\\s\\S]*?)}\\s*?})|(([\\s\\S]*?){([\\s\\S]*?)})","gi");for(;;){let r=n.exec(t);if(r)s.lastIndex=n.lastIndex;else if(r=s.exec(t),r)n.lastIndex=s.lastIndex;else break;i.push(r[0])}return i}var $t=/url\([^)]+\)\s*format\((["']?)([^"']+)\1\)/g,Bt=/src:\s*(?:url\([^)]+\)\s*format\([^)]+\)[,;]\s*)+/g;function oe(e,i){let{font:t}=i,n=t?t?.preferredFormat:void 0;return n?e.replace(Bt,s=>{for(;;){let[r,,l]=$t.exec(s)||[];if(!l)return"";if(l===n)return`src: ${r};`}}):e}async function Gt(e,i){let t=await q(e,i);if(S(t.node)&&N(t.node))return t.node;let{ownerDocument:n,log:s,tasks:r,svgStyleElement:l,svgDefsElement:o,svgStyles:c,font:h,progress:a,autoDestruct:d,onCloneNode:u,onEmbedNode:m,onCreateForeignObjectSvg:g}=t;s.time("clone node");let f=await z(t.node,t,!0);if(l&&n){let y="";c.forEach((A,T)=>{y+=`${A.join(`,
+`)} {
+  ${T}
+}
+`}),l.appendChild(n.createTextNode(y))}s.timeEnd("clone node"),await u?.(f),h!==!1&&S(f)&&(s.time("embed web font"),await Ft(f,t),s.timeEnd("embed web font")),s.time("embed node"),He(f,t);let p=r.length,b=0,w=async()=>{for(;;){let y=r.pop();if(!y)break;try{await y}catch(A){t.log.warn("Failed to run task",A)}a?.(++b,p)}};a?.(b,p),await Promise.all([...Array.from({length:4})].map(w)),s.timeEnd("embed node"),await m?.(f);let E=Wt(f,t);return o&&E.insertBefore(o,E.children[0]),l&&E.insertBefore(l,E.children[0]),d&&_t(t),await g?.(E),E}function Wt(e,i){let{width:t,height:n}=i,s=tt(t,n,e.ownerDocument),r=s.ownerDocument.createElementNS(s.namespaceURI,"foreignObject");return r.setAttributeNS(null,"x","0%"),r.setAttributeNS(null,"y","0%"),r.setAttributeNS(null,"width","100%"),r.setAttributeNS(null,"height","100%"),r.append(e),s.appendChild(r),s}async function Vt(e,i){let t=await q(e,i),n=await Gt(t),s=it(n,t.isEnable("removeControlCharacter"));t.autoDestruct||(t.svgStyleElement=Ee(t.ownerDocument),t.svgDefsElement=t.ownerDocument?.createElementNS($,"defs"),t.svgStyles.clear());let r=C(s,n.ownerDocument);return await ut(r,t)}async function Ce(e,i){let t=await q(e,i),{log:n,type:s,quality:r,dpi:l}=t,o=await Vt(t);n.time("canvas to blob");let c=await nt(o,s,r);if(["image/png","image/jpeg"].includes(s)&&l){let h=await ot(c.slice(0,33)),a=new Uint8Array(h);return s==="image/png"?a=Pe(a,l):s==="image/jpeg"&&(a=Me(a,l)),n.timeEnd("canvas to blob"),new Blob([a,c.slice(33)],{type:s})}return n.timeEnd("canvas to blob"),c}var M={METADATA:"data-replit-metadata",COMPONENT_NAME:"data-component-name"};function Le(e){if(e.startsWith("http://localhost:"))return!0;try{return new URL(e).hostname.endsWith(v.ALLOWED_DOMAIN)}catch{return!1}}function Y(e){if(!e)return null;let i=document.elementFromPoint(e.clientX,e.clientY);return i instanceof HTMLElement?i:null}function jt(e,i=300){if(!e)return"";let t=String(e);return t.length<=i?t:t.slice(0,i)+"..."}function X(e){if(e)return{tagName:e.tagName.toLowerCase(),className:e.className.toString?e.className.toString():String(e.className),textContent:e.textContent??"",id:e.id}}function B(e){let i=e.getAttribute(M.COMPONENT_NAME)??e.tagName.toLowerCase();return jt(i,50)}function K(e){let i=window.getComputedStyle(e),t=e.parentElement,n=e.nextElementSibling,s=t?.parentElement??null,r={backgroundColor:i.backgroundColor,color:i.color,display:i.display,position:i.position,width:i.width,height:i.height,fontSize:i.fontSize,fontFamily:i.fontFamily,fontWeight:i.fontWeight,margin:i.margin,padding:i.padding,textAlign:i.textAlign};return{elementPath:e.getAttribute(M.METADATA)??"",elementName:B(e),textContent:e.textContent??"",originalTextContent:e.getAttribute("data-original-text")?decodeURIComponent(e.getAttribute("data-original-text")??""):void 0,srcAttribute:e.getAttribute("src")??"",hasChildElements:e.childElementCount>0,id:e.id,className:e.className.toString?e.className.toString():String(e.className),computedStyles:r,textAlign:i.textAlign,relatedElements:{parent:X(t),nextSibling:X(n),grandParent:X(s)}}}async function xe(e){try{let t=window.getComputedStyle(e).backgroundColor;return qt(t)&&(t=window.getComputedStyle(document.documentElement).backgroundColor),await Ce(e,{type:"image/png",backgroundColor:t})}catch(i){console.error("[replit-cartographer] Failed to take screenshot:",i);return}}function qt(e){return e==="transparent"||e==="rgba(0, 0, 0, 0)"||e.endsWith(", 0)")||e.endsWith(",0)")}function J(e){let i=e.getBoundingClientRect(),t=window.innerHeight,n=window.innerWidth;return i.bottom>0&&i.top<t&&i.right>0&&i.left<n}function R(e,i=v.MAX_SIBLING_HIGHLIGHTERS,t=!1){let r=e.getAttribute(M.METADATA);if(!r)return[];let l=`[${M.METADATA}="${r}"]`,o=document,c=e.parentElement;c&&c.childElementCount>50&&(o=c);let h=o.querySelectorAll(l),a=Math.min(i,5e3),d=[],u=0;for(let m=0;m<h.length&&u<a;m++){let g=h[m];if(g instanceof HTMLElement&&g!==e){if(t&&!J(g))continue;d.push(g),u++}}return d}function _e(e,i,t){let n=e.children;for(let s=0;s<n.length;s++)if(t.value+=1,t.value>i||_e(n[s],i,t))return!0;return!1}function Ie(e){let i={value:0};return _e(e,v.MAX_DESCENDANTS_FOR_SCREENSHOT,i)}var D=class{selectedElement=null;selectedSiblingElements=[];visibleSelectedSiblingElements=[];isActive=!1;lastHighlightedElement=null;enableEditing=!1;shadowHost=null;shadowRoot=null;hoverHighlighter=null;hoverLabel=null;selectedHighlighter=null;selectedLabel=null;hoverSiblingHighlighters=[];selectedSiblingHighlighters=[];mutationObserver=null;throttledRecalculate=null;constructor(){this.setupMessageListener(),this.observeLightDarkModeSwitch(),this.notifyScriptLoaded(),this.throttledRecalculate=this.throttleRAF(this.recalculateSelectedElement.bind(this))}throttleRAF(i){let t=null,n=null;return(...s)=>{n=s,t===null&&(t=requestAnimationFrame(()=>{n!==null&&i(...n),t=null,n=null}))}}isPureTextElement(i){if(!i||!(i instanceof HTMLElement))return!1;let t=i.tagName.toLowerCase();if(t==="style"||t==="script"||t==="img"||i.childElementCount>0)return!1;let n=i.getAttribute("style");return n&&n.trim()!==""?!1:Array.from(i.childNodes).every(r=>r.nodeType===Node.TEXT_NODE)}initializeHighlighter(){this.shadowHost=document.createElement("div"),this.shadowHost.style.all="initial",this.shadowRoot=this.shadowHost.attachShadow({mode:"open"}),document.body.appendChild(this.shadowHost);let i=document.createElement("style");i.textContent=ee,this.shadowRoot.appendChild(i);let t=document.createElement("style");t.textContent=Z,document.head.appendChild(t),this.hoverHighlighter=document.createElement("div"),this.hoverLabel=document.createElement("div"),this.hoverHighlighter.className="beacon-highlighter beacon-hover-highlighter",this.hoverLabel.className="beacon-label beacon-hover-label",this.selectedHighlighter=document.createElement("div"),this.selectedLabel=document.createElement("div"),this.selectedHighlighter.className="beacon-highlighter beacon-selected-highlighter",this.selectedLabel.className="beacon-label beacon-selected-label",this.shadowRoot.appendChild(this.selectedHighlighter),this.shadowRoot.appendChild(this.selectedLabel),this.shadowRoot.appendChild(this.hoverHighlighter),this.shadowRoot.appendChild(this.hoverLabel)}setupMessageListener(){window.addEventListener("message",this.handleMessage.bind(this))}notifyScriptLoaded(){this.postMessageToParent({type:"SELECTOR_SCRIPT_LOADED",timestamp:Date.now(),version:P})}postMessageToParent(i){window.parent&&window.parent.postMessage(i,"*")}handleMouseMove=i=>{if(this.isActive&&this.hoverHighlighter){let t=Y(i);if(!t||t===this.hoverHighlighter||t===this.selectedHighlighter||t===this.shadowHost||this.selectedSiblingHighlighters.includes(t)||this.hoverSiblingHighlighters.includes(t)){this.hideHighlight(this.hoverHighlighter,this.hoverLabel),this.lastHighlightedElement=null,this.clearHoverSiblingHighlighters();return}if(t===this.selectedElement){this.hideHighlight(this.hoverHighlighter,this.hoverLabel),this.lastHighlightedElement=null,this.clearHoverSiblingHighlighters();return}this.lastHighlightedElement&&this.lastHighlightedElement!==t&&this.lastHighlightedElement!==this.selectedElement&&this.lastHighlightedElement.removeAttribute("contenteditable"),this.lastHighlightedElement=t,this.updateHighlighterPosition(t,this.hoverHighlighter,this.hoverLabel)}};handleMouseLeave=()=>{this.isActive&&(this.hoverHighlighter&&(this.hoverHighlighter.style.opacity="0"),this.hoverLabel&&(this.hoverLabel.style.opacity="0"),this.hoverSiblingHighlighters.length>0&&this.clearHoverSiblingHighlighters(),this.lastHighlightedElement&&this.lastHighlightedElement!==this.selectedElement&&this.lastHighlightedElement.removeAttribute("contenteditable"))};calculateLabelPosition(i,t){return t<28?{top:`${t}px`,left:`${i.left}px`,transform:"none",marginTop:"2px"}:{top:`${t}px`,left:`${i.left}px`,transform:"translateY(-100%)",marginTop:"-4px"}}updateHighlighterPosition(i,t,n){if(!t||!n)return;let s=R(i,v.MAX_SIBLING_HIGHLIGHTERS,!1);this.enableEditing&&s.length<=1&&i===this.selectedElement&&this.isPureTextElement(i)&&i.setAttribute("contenteditable","plaintext-only");let r=i.getBoundingClientRect(),l=window.innerHeight,o=Math.max(0,r.top),c=Math.min(l,r.bottom),h=Math.max(0,c-o);Object.assign(t.style,{opacity:h>0?"1":"0",top:`${o}px`,left:`${r.left}px`,width:`${r.width}px`,height:`${h}px`}),n.textContent=B(i);let a=this.calculateLabelPosition(r,o);Object.assign(n.style,{...a,opacity:h>0?"1":"0"}),t===this.selectedHighlighter?this.highlightSelectedSiblings(i):this.highlightHoverSiblings(i)}hideHighlight(i,t){i&&(i.style.opacity="0"),t&&(t.style.opacity="0");let n=i===this.hoverHighlighter,s=i===this.selectedHighlighter;n&&this.clearHoverSiblingHighlighters(),s&&this.clearSelectedSiblingHighlighters()}handleClick=async i=>{if(!this.isActive)return;i.preventDefault(),i.stopPropagation();let t=Y(i);if((!t||t===this.hoverHighlighter||t===this.selectedHighlighter||t===this.shadowHost)&&(t=this.lastHighlightedElement),!t||t===this.selectedElement)return;this.unselectCurrentElement(),this.clearSelectedSiblingHighlighters(),this.selectedElement=t;let n=R(t),s=n.length>0;s&&this.highlightSelectedSiblings(t),t.hasAttribute("data-original-text")||t.setAttribute("data-original-text",encodeURIComponent(t.textContent??"")),!t.hasAttribute("data-original-style")&&t.hasAttribute("style")&&t.setAttribute("data-original-style",encodeURIComponent(t.getAttribute("style")??"")),!t.hasAttribute("data-original-src")&&t.hasAttribute("src")&&t.setAttribute("data-original-src",encodeURIComponent(t.getAttribute("src")??"")),!s&&this.enableEditing&&this.isPureTextElement(t)&&(this.selectedElement.setAttribute("contenteditable","plaintext-only"),this.selectedElement.focus()),this.selectedHighlighter&&this.selectedLabel&&(this.selectedHighlighter.style.outlineStyle="solid",this.selectedHighlighter.style.opacity="1",this.selectedHighlighter.style.pointerEvents="none",this.selectedLabel.style.opacity="1",this.selectedLabel.textContent=B(t)),this.hoverHighlighter&&(this.hoverHighlighter.style.opacity="0",this.hoverHighlighter.style.pointerEvents="none"),this.hoverLabel&&(this.hoverLabel.style.opacity="0"),this.clearHoverSiblingHighlighters(),this.updateHighlighterPosition(t,this.selectedHighlighter,this.selectedLabel);let r=K(t),l;if(!Ie(t))try{l=await xe(t)}catch(o){console.error("[replit-cartographer] Error capturing element screenshot:",o)}this.observeSelectedElement(),this.postMessageToParent({type:"ELEMENT_SELECTED",payload:{...r,screenshotBlob:l??void 0,siblingCount:s?n.length:0},timestamp:Date.now()})};restoreElements(){document.querySelectorAll('[data-replit-dirty="true"]').forEach(t=>{if(t.hasAttribute("data-original-text")){if(t.textContent!==decodeURIComponent(t.getAttribute("data-original-text")||"")){let n=decodeURIComponent(t.getAttribute("data-original-text")||"");t.textContent=n}t.removeAttribute("data-original-text")}if(t.hasAttribute("data-original-style")){let n=decodeURIComponent(t.getAttribute("data-original-style")||"");t.setAttribute("style",n),t.removeAttribute("data-original-style")}else t.removeAttribute("style");if(t.hasAttribute("data-original-src")&&t.getAttribute("src")!==decodeURIComponent(t.getAttribute("data-original-src")||"")){let n=decodeURIComponent(t.getAttribute("data-original-src")||"");t.setAttribute("src",n),t.removeAttribute("data-original-src")}t.removeAttribute("data-replit-dirty")})}unselectCurrentElement(){if(this.restoreElements(),this.selectedElement){if(this.selectedElement.removeAttribute("contenteditable"),this.selectedElement.hasAttribute("data-original-style")){let i=decodeURIComponent(this.selectedElement.getAttribute("data-original-style")||"");this.selectedElement.setAttribute("style",i),this.selectedElement.removeAttribute("data-original-style")}if(this.selectedElement.hasAttribute("data-original-src")&&this.selectedElement.getAttribute("src")!==decodeURIComponent(this.selectedElement.getAttribute("data-original-src")||"")){let i=decodeURIComponent(this.selectedElement.getAttribute("data-original-src")||"");this.selectedElement.setAttribute("src",i),this.selectedElement.removeAttribute("data-original-src")}this.selectedElement=null}this.clearSelectedSiblingHighlighters(),this.mutationObserver&&(this.mutationObserver.disconnect(),this.mutationObserver=null)}handleMessage=i=>{if(!Le(i.origin))return;let t=i.data;if(!(!t||typeof t!="object"))switch(t.type){case"TOGGLE_REPLIT_VISUAL_EDITOR":{this.handleVisualEditorToggle(t);break}case"CLEAR_SELECTION":{this.unselectCurrentElement(),this.hideHighlight(this.selectedHighlighter,this.selectedLabel);break}case"UPDATE_SELECTED_ELEMENT":{if(!this.selectedElement)return;let{attributes:n}=t;[this.selectedElement,...this.selectedSiblingElements].forEach(r=>{n.style!==void 0&&(r.setAttribute("style",n.style),r.setAttribute("data-replit-dirty","true")),n.textContent!==void 0&&(r.textContent=n.textContent,r.setAttribute("data-replit-dirty","true")),n.className!==void 0&&(r.className=n.className,r.setAttribute("data-replit-dirty","true")),n.src!==void 0&&(r.setAttribute("src",n.src),r.setAttribute("data-replit-dirty","true"))}),this.updateHighlighterPosition(this.selectedElement,this.selectedHighlighter,this.selectedLabel),this.selectedSiblingElements.length>0&&(this.clearHighlighters(this.selectedSiblingHighlighters),this.selectedSiblingHighlighters=[],this.selectedSiblingHighlighters=this.highlightElements(this.selectedSiblingElements));break}case"CLEAR_ELEMENT_DIRTY":{this.selectedElement&&this.selectedElement.removeAttribute("data-replit-dirty");break}case"APPLY_THEME_PREVIEW":{this.handleApplyThemePreview(t);break}case"CLEAR_THEME_PREVIEW":{this.handleClearThemePreview();break}}};handleApplyThemePreview(i){if(i.type!=="APPLY_THEME_PREVIEW")return;let t=document.getElementById(v.THEME_PREVIEW_STYLE_ID);t||(t=document.createElement("style"),t.id=v.THEME_PREVIEW_STYLE_ID,document.head.appendChild(t)),t.textContent=i.themeContent}handleClearThemePreview(){let i=document.getElementById(v.THEME_PREVIEW_STYLE_ID);i&&i.remove()}handleVisualEditorToggle(i){if(i.type!=="TOGGLE_REPLIT_VISUAL_EDITOR")return;let t=!!i.enabled;this.enableEditing=!!i.enableEditing,t?this.postMessageToParent({type:"REPLIT_VISUAL_EDITOR_ENABLED",timestamp:Date.now()}):this.postMessageToParent({type:"REPLIT_VISUAL_EDITOR_DISABLED",timestamp:Date.now()}),this.isActive!==t&&(this.isActive=t,this.toggleEventListeners(t))}observeSelectedElement(){if(this.selectedElement){if(!this.isPureTextElement(this.selectedElement)){this.mutationObserver&&(this.mutationObserver.disconnect(),this.mutationObserver=null);return}this.mutationObserver&&this.mutationObserver.disconnect(),this.mutationObserver=new MutationObserver(i=>{if(i.some(n=>n.type==="characterData")&&this.selectedElement){this.selectedElement.setAttribute("data-replit-dirty","true");let n=K(this.selectedElement);this.postMessageToParent({type:"ELEMENT_TEXT_CHANGED",payload:n,timestamp:Date.now()}),this.updateHighlighterPosition(this.selectedElement,this.selectedHighlighter,this.selectedLabel)}}),this.mutationObserver.observe(this.selectedElement,{characterData:!0,childList:!1,attributes:!1,subtree:!0})}}observeLightDarkModeSwitch(){let i=new MutationObserver(n=>{n.forEach(s=>{s.type==="attributes"&&s.attributeName==="class"&&(s.target.classList.contains("dark")?this.postMessageToParent({type:"DARK_MODE_USED",timestamp:Date.now()}):this.postMessageToParent({type:"LIGHT_MODE_USED",timestamp:Date.now()}))})}),t=document.documentElement;i.observe(t,{attributes:!0,attributeFilter:["class"],childList:!1,subtree:!1})}recalculateSelectedElement=()=>{this.isActive&&(this.selectedElement&&this.updateHighlighterPosition(this.selectedElement,this.selectedHighlighter,this.selectedLabel),this.lastHighlightedElement&&this.updateHighlighterPosition(this.lastHighlightedElement,this.hoverHighlighter,this.hoverLabel),this.selectedSiblingElements.length>0&&this.updateSiblingHighlighterPositions())};updateSiblingHighlighterPositions(){for(let i=0;i<this.selectedSiblingHighlighters.length;i++){let t=this.selectedSiblingHighlighters[i],n=this.visibleSelectedSiblingElements[i];if(!t||!n)continue;let s=n.getBoundingClientRect(),r=window.innerHeight,l=Math.max(0,s.top),o=Math.min(r,s.bottom),c=Math.max(0,o-l);Object.assign(t.style,{opacity:c>0?"1":"0",top:`${l}px`,left:`${s.left}px`,width:`${s.width}px`,height:`${c}px`})}}handleKeyDown=i=>{this.isActive&&(i.key==="Escape"||i.key==="Esc")&&this.handleVisualEditorToggle({type:"TOGGLE_REPLIT_VISUAL_EDITOR",enabled:!1,timestamp:Date.now()})};toggleEventListeners(i){i?(this.initializeHighlighter(),this.enableDisabledElements(),document.addEventListener("mousemove",this.handleMouseMove),document.addEventListener("mouseleave",this.handleMouseLeave),document.addEventListener("click",this.handleClick,!0),document.addEventListener("keydown",this.handleKeyDown),this.throttledRecalculate&&(window.addEventListener("resize",this.throttledRecalculate),window.addEventListener("scroll",this.throttledRecalculate,!0))):(this.restoreDisabledElements(),this.restoreElements(),document.removeEventListener("mousemove",this.handleMouseMove),document.removeEventListener("click",this.handleClick,!0),document.removeEventListener("mouseleave",this.handleMouseLeave),document.removeEventListener("keydown",this.handleKeyDown),this.throttledRecalculate&&(window.removeEventListener("resize",this.throttledRecalculate),window.removeEventListener("scroll",this.throttledRecalculate,!0)),this.mutationObserver&&(this.mutationObserver.disconnect(),this.mutationObserver=null),this.selectedElement&&(this.selectedElement.removeAttribute("contenteditable"),this.selectedElement.removeAttribute("data-original-text"),document.querySelectorAll('[contenteditable="plaintext-only"]').forEach(t=>{t.removeAttribute("contenteditable")})),this.clearSelectedSiblingHighlighters(),this.clearHoverSiblingHighlighters(),this.hoverHighlighter?.remove(),this.hoverLabel?.remove(),this.selectedHighlighter?.remove(),this.selectedLabel?.remove(),this.shadowHost?.remove(),this.hoverHighlighter=null,this.hoverLabel=null,this.selectedHighlighter=null,this.selectedLabel=null,this.shadowHost=null,this.shadowRoot=null,this.selectedElement=null)}clearHighlighters(i){return i.forEach(t=>{t.remove()}),[]}clearHoverSiblingHighlighters(){this.hoverSiblingHighlighters=this.clearHighlighters(this.hoverSiblingHighlighters)}clearSelectedSiblingHighlighters(){this.selectedSiblingElements.forEach(i=>{i.removeAttribute("contenteditable")}),this.selectedSiblingElements=[],this.visibleSelectedSiblingElements=[],this.selectedSiblingHighlighters=this.clearHighlighters(this.selectedSiblingHighlighters)}highlightElements(i){if(!this.shadowRoot||i.length===0)return[];let t=[];return i.forEach(n=>{let s=document.createElement("div");s.className="beacon-highlighter beacon-sibling-highlighter",this.shadowRoot?.appendChild(s),t.push(s);let r=n.getBoundingClientRect(),l=window.innerHeight,o=Math.max(0,r.top),c=Math.min(l,r.bottom),h=Math.max(0,c-o);Object.assign(s.style,{opacity:h>0?"1":"0",top:`${o}px`,left:`${r.left}px`,width:`${r.width}px`,height:`${h}px`})}),t}highlightHoverSiblings(i){this.clearHoverSiblingHighlighters();let t=R(i,v.MAX_SIBLING_HIGHLIGHTERS,!0);this.hoverSiblingHighlighters=this.highlightElements(t)}highlightSelectedSiblings(i){this.clearSelectedSiblingHighlighters();let t=R(i),n=t.filter(s=>J(s));this.selectedSiblingElements=t,this.visibleSelectedSiblingElements=n,this.selectedSiblingHighlighters=this.highlightElements(n)}enableDisabledElements(){document.querySelectorAll("button[disabled], input[disabled]").forEach(i=>{i.removeAttribute("disabled"),i.setAttribute("data-replit-disabled","")})}restoreDisabledElements(){document.querySelectorAll("[data-replit-disabled]").forEach(i=>{i.removeAttribute("data-replit-disabled"),i.setAttribute("disabled","")})}};if(typeof window<"u")try{window.REPLIT_BEACON_VERSION||(window.REPLIT_BEACON_VERSION=P,new D)}catch(e){console.error("[replit-beacon] Failed to initialize:",e)}})();
+</script>
+  <script type="text/javascript" src="/@replit/vite-plugin-dev-banner/banner-script.js" id="replit-dev-banner"></script>
 </head>
 <body>
 
-<div class="card" id="landing">
-  <h2>LegendZ Wallet (Demo)</h2>
-  <p>This is a simulated UI. No real accounts or data are used.</p>
-  <button onclick="startDemo()">Continue</button>
+<div id="app">
+
+  <!-- ============== LOGIN VIEW ============== -->
+  <div id="loginView" class="view">
+    <div class="auth-wrap">
+      <div class="auth-stack">
+        <div class="auth-brand">
+          <div class="brand-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L4 6v6c0 4.5 3.5 8.5 8 9.5 4.5-1 8-5 8-9.5V6l-8-4z"/>
+            </svg>
+          </div>
+          <div class="brand-text">
+            <span class="brand-name">LegendZ Wallet</span>
+            <span class="brand-tag">ECC/PS3 · Cold storage</span>
+          </div>
+        </div>
+
+        <div class="auth-card">
+          <div class="auth-h">Welcome back</div>
+          <div class="auth-p">Sign in to your wallet to manage assets and link accounts.</div>
+
+          <form id="loginForm" autocomplete="off">
+            <div class="field">
+              <label class="field-l" for="loginUser">Username</label>
+              <div class="field-wrap" id="userWrap">
+                <input type="text" id="loginUser" class="field-input" placeholder="Enter your username" spellcheck="false" autocapitalize="off" autocorrect="off"/>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-l" for="loginPass">Password</label>
+              <div class="field-wrap" id="passWrap">
+                <input type="password" id="loginPass" class="field-input" placeholder="Enter your password" autocomplete="current-password"/>
+                <button type="button" class="field-eye" id="eyeBtn" aria-label="Show password">
+                  <svg id="eyeOn" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg id="eyeOff" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                </button>
+              </div>
+              <div id="loginErr" class="field-err" style="display:none">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span>That username or password didn't match. Please try again.</span>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="loginBtn" style="margin-top:6px">
+              <span class="btn-spinner"></span>
+              <span class="btn-txt">Sign in</span>
+            </button>
+          </form>
+        </div>
+
+        <div class="auth-foot-link">Need help? <b>Contact support</b></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============== LINK PHANTOM (STEP 1) ============== -->
+  <div id="linkView" class="view">
+    <div class="auth-wrap">
+      <div class="auth-stack">
+        <div class="auth-brand">
+          <div class="brand-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L4 6v6c0 4.5 3.5 8.5 8 9.5 4.5-1 8-5 8-9.5V6l-8-4z"/>
+            </svg>
+          </div>
+          <div class="brand-text">
+            <span class="brand-name">LegendZ Wallet</span>
+            <span class="brand-tag">ECC/PS3 · Cold storage</span>
+          </div>
+        </div>
+
+        <div class="auth-card">
+          <div class="steps">
+            <span class="step-pill act">1 Link account</span>
+            <svg class="step-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            <span class="step-pill">2 Generate address</span>
+          </div>
+
+          <div class="auth-h">Link your Phantom wallet</div>
+          <div class="auth-p">Enter your Phantom username so we can pair it with a LegendZ deposit address.</div>
+
+          <form id="linkForm" autocomplete="off">
+            <div class="field">
+              <label class="field-l" for="linkUser">Phantom username</label>
+              <div class="field-wrap" id="linkWrap">
+                <span class="field-prefix">@</span>
+                <input type="text" id="linkUser" class="field-input" placeholder="your_username" spellcheck="false" autocapitalize="off" autocorrect="off" maxlength="32"/>
+              </div>
+              <div class="field-help">Letters, numbers, and underscores. 2–32 characters.</div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="linkBtn" style="margin-top:6px">
+              <span class="btn-spinner"></span>
+              <span class="btn-txt">Continue</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============== ADDRESS GENERATED (STEP 2) ============== -->
+  <div id="addressView" class="view">
+    <div class="auth-wrap">
+      <div class="auth-stack">
+        <div class="auth-brand">
+          <div class="brand-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L4 6v6c0 4.5 3.5 8.5 8 9.5 4.5-1 8-5 8-9.5V6l-8-4z"/>
+            </svg>
+          </div>
+          <div class="brand-text">
+            <span class="brand-name">LegendZ Wallet</span>
+            <span class="brand-tag">ECC/PS3 · Cold storage</span>
+          </div>
+        </div>
+
+        <div class="auth-card">
+          <div class="steps">
+            <span class="step-pill done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg> Account linked</span>
+            <svg class="step-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+            <span class="step-pill act">2 Generate address</span>
+          </div>
+
+          <div class="auth-h">Your deposit address is ready</div>
+          <div class="auth-p">Copy the address below into your Phantom wallet to finish linking. It's reserved for <b id="linkedAtUser" style="color:var(--text);font-weight:600">@user</b>.</div>
+
+          <div class="addr-display">
+            <div class="addr-l">Deposit address</div>
+            <div class="addr-val" id="addrValue">legendzecc-000000000</div>
+            <button class="addr-cp" id="addrCpBtn" title="Copy address">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            </button>
+          </div>
+
+          <div class="notice">
+            <svg class="notice-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div>Paste this into your Phantom wallet, confirm the link there, then come back to finish.</div>
+          </div>
+
+          <button type="button" class="btn btn-primary" id="finishBtn">
+            <span class="btn-spinner"></span>
+            <span class="btn-txt">Finish linking</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============== DASHBOARD ============== -->
+  <div id="dashView" class="view">
+    <div class="dash">
+      <div class="dash-hdr">
+        <div class="dh-l">
+          <div class="dh-mark">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L4 6v6c0 4.5 3.5 8.5 8 9.5 4.5-1 8-5 8-9.5V6l-8-4z"/>
+            </svg>
+          </div>
+          <div>
+            <div class="dh-name">LegendZ Wallet</div>
+            <div class="dh-sub">ECC/PS3 · <span id="netLabel">Mainnet</span></div>
+          </div>
+        </div>
+        <div class="dh-r">
+          <button class="icon-btn" id="refreshBtn" title="Refresh">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+          </button>
+          <button class="icon-btn" id="settingsBtn" title="Settings">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33h0a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v0a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="dash-body">
+        <div class="dash-inner">
+
+          <!-- Transfer ECC Sentry Token card -->
+          <div class="transfer-card">
+            <div class="transfer-top">
+              <div class="transfer-l-wrap">
+                <div class="transfer-ico">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L4 6v6c0 4.5 3.5 8.5 8 9.5 4.5-1 8-5 8-9.5V6l-8-4z"/>
+                    <polyline points="9 12 11 14 15 10"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="transfer-h">ECC Sentry Token</div>
+                  <div class="transfer-s">Move your sentry token to a new custodial provider. The token reseats your wallet's verification authority and security policies.</div>
+                </div>
+              </div>
+              <div class="transfer-net-pill"><span class="pulse"></span><span id="netLabel2">Mainnet</span></div>
+            </div>
+            <div class="transfer-meta">
+              <div class="transfer-meta-item">Sentry ID: <b id="sentryId">SNTRY-—</b></div>
+              <div class="transfer-meta-item">Issued: <b id="sentryIssued">—</b></div>
+              <div class="transfer-meta-item">Status: <b style="color:var(--success)">Held</b></div>
+            </div>
+            <div class="transfer-actions">
+              <button class="transfer-btn" id="transferBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><polyline points="13 6 19 12 13 18"/></svg>
+                Transfer ECC sentry token to new provider
+              </button>
+            </div>
+          </div>
+
+          <!-- Info cards -->
+          <div class="info-grid">
+            <div class="info-card">
+              <div class="info-card-l">Wallet address</div>
+              <div class="info-card-v" id="dashAddr">legendzecc-000000000</div>
+              <div class="info-card-extra"><span class="tag tag-success">Active</span> Live on chain</div>
+            </div>
+            <div class="info-card">
+              <div class="info-card-l">Linked Phantom</div>
+              <div class="info-card-v" id="dashUser">@user</div>
+              <div class="info-card-extra"><span class="tag tag-acc">Linked</span> Bridge online</div>
+            </div>
+          </div>
+
+          <!-- Security overview -->
+          <div class="section">
+            <div class="section-hdr">
+              <div>
+                <div class="section-h">Security</div>
+                <div class="section-sub" id="secSummary">All protections active</div>
+              </div>
+              <button class="icon-btn" id="openSettings2" title="Open settings"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button>
+            </div>
+            <div class="section-body">
+              <!-- Add a custom rule -->
+              <div class="cr-add">
+                <div>
+                  <div class="cr-add-l">Add a custom security rule</div>
+                  <div class="cr-add-s">Define your own rule to enforce on this wallet (e.g. "Block transfers over 1,000 ECC", "Notify on new device").</div>
+                </div>
+                <div class="cr-add-row">
+                  <input type="text" id="crInput" class="cr-add-input" placeholder="Describe your rule…" maxlength="120" autocomplete="off"/>
+                  <button class="cr-add-btn" id="crAddBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Add rule
+                  </button>
+                </div>
+              </div>
+              <!-- Custom rules list -->
+              <div id="customRulesList"></div>
+              <!-- Default highlights -->
+              <div id="secList"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
-<div class="card hidden" id="link">
-  <h2>Link Wallet (Demo)</h2>
-  <label>Username</label>
-  <div style="display:flex;">
-    <span style="padding:10px;background:#0f172a;border-radius:8px 0 0 8px;">@</span>
-    <input id="user" style="border-radius:0 8px 8px 0;" placeholder="enter name"/>
+<!-- ============== SETTINGS PANEL ============== -->
+<div class="set-overlay" id="setOverlay"></div>
+<aside class="set-panel" id="setPanel" aria-hidden="true">
+  <div class="set-hdr">
+    <div>
+      <div class="set-h">Settings</div>
+      <div class="set-h-sub">Wallet, security, and privacy</div>
+    </div>
+    <button class="icon-btn" id="setClose"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
   </div>
-  <button onclick="generateAddress()">Generate Address</button>
+  <div class="set-body">
+
+    <div class="set-group">
+      <div class="set-group-h">Linked wallet</div>
+    </div>
+    <div class="edit-row">
+      <div>
+        <div class="edit-row-l">Phantom username</div>
+        <div class="edit-row-s">Update if your Phantom handle changed.</div>
+      </div>
+      <div class="edit-prefix-wrap">
+        <span class="edit-prefix">@</span>
+        <input type="text" id="editUser" class="edit-input with-prefix" maxlength="32" autocomplete="off" spellcheck="false"/>
+      </div>
+    </div>
+    <div class="edit-row">
+      <div>
+        <div class="edit-row-l">Wallet address</div>
+        <div class="edit-row-s">Manually edit or regenerate your deposit address.</div>
+      </div>
+      <input type="text" id="editAddr" class="edit-input" autocomplete="off" spellcheck="false"/>
+      <div class="edit-actions">
+        <button class="edit-btn" id="regenAddr">Regenerate</button>
+        <button class="edit-btn primary" id="saveLink">Save changes</button>
+      </div>
+    </div>
+
+    <div class="set-group">
+      <div class="set-group-h">Account security</div>
+    </div>
+    <div id="grp-account"></div>
+
+    <div class="set-group">
+      <div class="set-group-h">Verification</div>
+    </div>
+    <div id="grp-verify"></div>
+
+    <div class="set-group">
+      <div class="set-group-h">Transaction security</div>
+    </div>
+    <div id="grp-tx"></div>
+
+    <div class="set-group">
+      <div class="set-group-h">Privacy</div>
+    </div>
+    <div id="grp-priv"></div>
+
+    <div class="set-group">
+      <div class="set-group-h">Wallet configuration</div>
+    </div>
+    <div id="grp-config"></div>
+
+    <div class="set-group">
+      <div class="set-group-h">Session</div>
+    </div>
+    <div class="set-row">
+      <div class="set-row-info">
+        <div class="set-row-l">Auto-lock timer</div>
+        <div class="set-row-s">Lock the wallet after a period of inactivity.</div>
+      </div>
+      <select class="sel" id="autoLock">
+        <option value="5">5 min</option>
+        <option value="15">15 min</option>
+        <option value="30">30 min</option>
+        <option value="60">1 hour</option>
+        <option value="0">Never</option>
+      </select>
+    </div>
+
+  </div>
+  <div class="set-foot">
+    <button class="btn btn-danger" id="signOutBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      <span class="btn-txt">Sign out</span>
+    </button>
+  </div>
+</aside>
+
+<!-- ============== TRANSFER SENTRY TOKEN MODAL ============== -->
+<div class="modal-overlay" id="transferModal">
+  <div class="modal" role="dialog" aria-labelledby="transferModalTitle">
+    <div class="modal-hdr">
+      <div class="modal-h-wrap">
+        <div class="modal-h-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><polyline points="13 6 19 12 13 18"/></svg>
+        </div>
+        <div>
+          <div class="modal-h" id="transferModalTitle">Transfer ECC sentry token</div>
+          <div class="modal-h-sub">Reseat your wallet's verification authority.</div>
+        </div>
+      </div>
+      <button class="icon-btn" id="transferClose"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label class="field-l" for="trProvider">New provider name</label>
+        <div class="field-wrap" id="trProviderWrap">
+          <input type="text" id="trProvider" class="field-input" placeholder="e.g. Coinbase Custody" autocomplete="off" maxlength="60"/>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-l" for="trAddr">Provider receive address</label>
+        <div class="field-wrap" id="trAddrWrap">
+          <input type="text" id="trAddr" class="field-input" placeholder="legendzecc-XXXXXXXXX or wallet address" autocomplete="off" spellcheck="false"/>
+        </div>
+        <div class="field-help">Double-check this address. Sentry token transfers cannot be undone once confirmed.</div>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label class="field-l" for="trMemo">Memo <span style="color:var(--text-4);font-weight:400">(optional)</span></label>
+        <div class="field-wrap">
+          <input type="text" id="trMemo" class="field-input" placeholder="Reason for transfer…" autocomplete="off" maxlength="120"/>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="transferCancel"><span class="btn-txt">Cancel</span></button>
+      <button class="btn btn-primary" id="transferConfirm">
+        <span class="btn-spinner"></span>
+        <span class="btn-txt">Confirm transfer</span>
+      </button>
+    </div>
+  </div>
 </div>
 
-<div class="card hidden" id="address">
-  <h2>Generated Address</h2>
-  <p id="addr"></p>
-  <button onclick="finish()">Finish Linking</button>
-</div>
-
-<div class="card hidden" id="dashboard">
-  <h2>Dashboard (Demo)</h2>
-  <div class="toggle">
-    <span>2FA Enabled</span>
-    <input type="checkbox" onchange="saveSetting('2fa', this.checked)">
-  </div>
-  <div class="toggle">
-    <span>Transaction Alerts</span>
-    <input type="checkbox" onchange="saveSetting('alerts', this.checked)">
-  </div>
-  <div class="toggle">
-    <span>Device Approval</span>
-    <input type="checkbox" onchange="saveSetting('device', this.checked)">
-  </div>
-</div>
+<div id="toasts"></div>
 
 <script>
-function startDemo() {
-  document.getElementById('landing').classList.add('hidden');
-  document.getElementById('link').classList.remove('hidden');
+/* =============== STATE & CONSTANTS =============== */
+const VALID_USER = 'j$svccx165hj';
+const VALID_PASS = 'rGh197!&omPk3';
+
+const LS = {
+  AUTH: 'legendz_auth',
+  USER: 'legendz_phantom_user',
+  ADDR: 'legendz_wallet_address',
+  SET:  'legendz_settings',
+  RULES:'legendz_custom_rules',
+  SENTRY:'legendz_sentry',
+};
+
+const DEFAULT_SETTINGS = {
+  twoFactor: true,
+  biometric: true,
+  ipLock: false,
+  deviceApproval: true,
+  ecc: true,
+  vbv: false,
+  amlScreen: true,
+  kyc: false,
+  txSigning: true,
+  withdrawConfirm: true,
+  spendingLimit: false,
+  multiSig: false,
+  hideBalance: false,
+  phishProtect: true,
+  dappWhitelist: false,
+  antiTrack: true,
+  network: 'mainnet',
+  hardwareMode: false,
+  testnetWarn: true,
+  rpcOverride: false,
+  autoLock: 15,
+};
+
+const SETTING_DEFS = {
+  account: [
+    { k:'twoFactor', label:'Two-factor authentication', sub:'Require a 6-digit code from your authenticator app on every sign-in.', tag:'TOTP' },
+    { k:'biometric', label:'Biometric lock', sub:'Use Face ID, Touch ID, or Windows Hello to unlock the wallet.' },
+    { k:'deviceApproval', label:'Device approval', sub:'New devices must be approved from a trusted session before signing in.' },
+    { k:'ipLock', label:'IP address lock', sub:'Restrict sign-ins to your previously verified IP ranges.' },
+  ],
+  verify: [
+    { k:'ecc', label:'ECC address verification', sub:'Verify all outgoing addresses against the elliptic-curve registry.', tag:'ECC', tagClass:'acc' },
+    { k:'vbv', label:'Verified by Visa', sub:'Require Verified-by-Visa challenge for card-funded purchases.', tag:'VBV', tagClass:'acc' },
+    { k:'amlScreen', label:'AML screening', sub:'Screen counter-party addresses against sanctions and AML watchlists.' },
+    { k:'kyc', label:'Enhanced identity verification', sub:'Require KYC tier 2 for transactions above the configured limit.' },
+  ],
+  tx: [
+    { k:'txSigning', label:'Require transaction signing', sub:'All outbound transactions must be cryptographically signed in-app.' },
+    { k:'withdrawConfirm', label:'Withdrawal confirmation', sub:'Email and push notification required before any withdrawal executes.' },
+    { k:'spendingLimit', label:'Daily spending limit', sub:'Cap daily outbound transactions at the configured threshold.' },
+    { k:'multiSig', label:'Multi-signature transactions', sub:'Require 2-of-3 signatures from approved devices for large transfers.' },
+  ],
+  priv: [
+    { k:'hideBalance', label:'Hide balance', sub:'Mask wallet balance with asterisks throughout the app.' },
+    { k:'phishProtect', label:'Phishing protection', sub:'Block known scam URLs and suspicious dApp connection attempts.' },
+    { k:'dappWhitelist', label:'DApp whitelist only', sub:'Reject all dApp connections except those on your trusted list.' },
+    { k:'antiTrack', label:'Anti-tracking mode', sub:'Strip tracking metadata from outbound RPC requests.' },
+  ],
+  config: [
+    { k:'hardwareMode', label:'Hardware wallet mode', sub:'Require a connected Ledger or Trezor for all signing operations.' },
+    { k:'testnetWarn', label:'Testnet banner', sub:'Display a warning banner whenever connected to a test network.' },
+    { k:'rpcOverride', label:'Custom RPC endpoint', sub:'Route on-chain queries through your private RPC node.' },
+  ],
+};
+
+let S = {
+  view: 'login',
+  authenticated: false,
+  phantomUser: '',
+  walletAddress: '',
+  settings: { ...DEFAULT_SETTINGS },
+  customRules: [],          // [{ id, label, on }]
+  sentry: { id:'', issued:'' },
+};
+
+/* =============== HELPERS =============== */
+const $ = id => document.getElementById(id);
+const $$ = sel => document.querySelectorAll(sel);
+
+function loadState(){
+  try{ S.authenticated = localStorage.getItem(LS.AUTH) === '1'; }catch(e){}
+  try{ S.phantomUser = localStorage.getItem(LS.USER) || ''; }catch(e){}
+  try{ S.walletAddress = localStorage.getItem(LS.ADDR) || ''; }catch(e){}
+  try{
+    const raw = localStorage.getItem(LS.SET);
+    if(raw){ S.settings = { ...DEFAULT_SETTINGS, ...JSON.parse(raw) }; }
+  }catch(e){}
+  try{
+    const raw = localStorage.getItem(LS.RULES);
+    if(raw){ S.customRules = JSON.parse(raw) || []; }
+  }catch(e){ S.customRules = []; }
+  try{
+    const raw = localStorage.getItem(LS.SENTRY);
+    if(raw){ S.sentry = JSON.parse(raw); }
+    if(!S.sentry || !S.sentry.id){
+      S.sentry = { id: genSentryId(), issued: todayShort() };
+      localStorage.setItem(LS.SENTRY, JSON.stringify(S.sentry));
+    }
+  }catch(e){ S.sentry = { id: genSentryId(), issued: todayShort() }; }
+}
+function persistAuth(b){ try{ localStorage.setItem(LS.AUTH, b ? '1' : '0'); }catch(e){} }
+function persistUser(u){ try{ localStorage.setItem(LS.USER, u||''); }catch(e){} }
+function persistAddr(a){ try{ localStorage.setItem(LS.ADDR, a||''); }catch(e){} }
+function persistSettings(){ try{ localStorage.setItem(LS.SET, JSON.stringify(S.settings)); }catch(e){} }
+function persistRules(){ try{ localStorage.setItem(LS.RULES, JSON.stringify(S.customRules)); }catch(e){} }
+function persistSentry(){ try{ localStorage.setItem(LS.SENTRY, JSON.stringify(S.sentry)); }catch(e){} }
+
+function genAddress(){
+  let s = '';
+  for(let i=0;i<9;i++) s += Math.floor(Math.random()*10);
+  return 'legendzecc-' + s;
+}
+function genSentryId(){
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  let s = '';
+  for(let i=0;i<10;i++) s += chars[Math.floor(Math.random()*chars.length)];
+  return 'SNTRY-' + s.slice(0,5) + '-' + s.slice(5);
+}
+function todayShort(){
+  const d = new Date();
+  const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+  return m + ' ' + d.getDate() + ', ' + d.getFullYear();
+}
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-function generateAddress() {
-  const name = document.getElementById('user').value;
-  if (!name) return alert("Enter a username (demo only)");
-
-  const rand = Math.floor(100000000 + Math.random() * 900000000);
-  const address = "legendzecc-" + rand;
-
-  localStorage.setItem("demoUser", name);
-  localStorage.setItem("demoAddress", address);
-
-  document.getElementById('link').classList.add('hidden');
-  document.getElementById('address').classList.remove('hidden');
-  document.getElementById('addr').innerText = address;
+/* =============== VIEW ROUTING =============== */
+function showView(name){
+  S.view = name;
+  $$('.view').forEach(v => v.classList.remove('active'));
+  const v = $(name + 'View');
+  if(v) v.classList.add('active');
+  window.scrollTo(0,0);
 }
 
-function finish() {
-  document.getElementById('address').classList.add('hidden');
-  document.getElementById('dashboard').classList.remove('hidden');
+function route(){
+  if(!S.authenticated){ showView('login'); return; }
+  if(!S.phantomUser){ showView('link'); return; }
+  if(!S.walletAddress){ showView('address'); return; }
+  showView('dash');
+  hydrateDash();
+}
 
-  // Load saved settings
-  document.querySelectorAll("input[type=checkbox]").forEach(cb => {
-    const key = cb.parentElement.innerText.trim();
-    cb.checked = localStorage.getItem(key) === "true";
+/* =============== TOASTS =============== */
+function toast(type, title, msg){
+  const wrap = $('toasts');
+  const t = document.createElement('div');
+  t.className = 'toast toast-' + type;
+  const icons = {
+    ok:   '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>',
+    err:  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+    info: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+    warn: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  };
+  t.innerHTML = `<div class="toast-ico">${icons[type]||icons.info}</div><div class="toast-body"><div class="toast-t">${title}</div>${msg?`<div class="toast-m">${msg}</div>`:''}</div>`;
+  wrap.appendChild(t);
+  setTimeout(()=>{ t.classList.add('out'); setTimeout(()=>t.remove(), 250); }, 3400);
+}
+
+/* =============== LOGIN =============== */
+function bindLogin(){
+  $('eyeBtn').addEventListener('click', () => {
+    const inp = $('loginPass');
+    const on = $('eyeOn'), off = $('eyeOff');
+    if(inp.type === 'password'){ inp.type = 'text'; on.style.display='none'; off.style.display=''; }
+    else{ inp.type = 'password'; on.style.display=''; off.style.display='none'; }
+  });
+
+  $('loginForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const u = $('loginUser').value;
+    const p = $('loginPass').value;
+    const btn = $('loginBtn');
+    const errEl = $('loginErr');
+    errEl.style.display = 'none';
+    $('userWrap').classList.remove('err');
+    $('passWrap').classList.remove('err');
+
+    if(!u || !p){
+      errEl.querySelector('span').textContent = 'Please enter both your username and password.';
+      errEl.style.display = 'flex';
+      $('userWrap').classList.toggle('err', !u);
+      $('passWrap').classList.toggle('err', !p);
+      return;
+    }
+
+    btn.classList.add('btn-loading');
+    btn.disabled = true;
+    setTimeout(() => {
+      btn.classList.remove('btn-loading');
+      btn.disabled = false;
+      if(u === VALID_USER && p === VALID_PASS){
+        S.authenticated = true;
+        persistAuth(true);
+        toast('ok', 'Signed in', 'Welcome back to LegendZ Wallet.');
+        setTimeout(route, 300);
+      }else{
+        errEl.querySelector('span').textContent = "That username or password didn't match. Please try again.";
+        errEl.style.display = 'flex';
+        $('userWrap').classList.add('err');
+        $('passWrap').classList.add('err');
+        toast('err', 'Sign-in failed', 'Username or password is incorrect.');
+      }
+    }, 600);
   });
 }
 
-function saveSetting(key, value) {
-  localStorage.setItem(key, value);
+function renderSubscriptionBanner(){
+  const existing = $('subBanner');
+  if(existing) existing.remove();
+  const banner = document.createElement('button');
+  banner.id = 'subBanner';
+  banner.type = 'button';
+  banner.className = 'sub-banner';
+  banner.innerHTML = `
+    <div class="sub-banner-top">Your Signature Subscription</div>
+    <div class="sub-banner-mid">ECC/Ps3-88700K</div>
+    <div class="sub-banner-btm">You have 4 years left</div>
+    <div class="sub-banner-price">Price <b>599.99$</b></div>
+  `;
+  banner.addEventListener('click', () => toast('info', 'Signature Subscription', 'ECC/Ps3-88700K · 4 years left · 599.99$'));
+  const host = $('dashView') ? $('dashView') : document.body;
+  const target = document.querySelector('.dash-inner');
+  if(target) target.prepend(banner);
 }
+
+/* =============== LINK PHANTOM =============== */
+function bindLink(){
+  $('linkForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const v = $('linkUser').value.trim().replace(/^@+/, '');
+    const btn = $('linkBtn');
+    if(!v){
+      $('linkWrap').classList.add('err');
+      setTimeout(() => $('linkWrap').classList.remove('err'), 500);
+      toast('err', 'Username required', 'Enter your Phantom username to continue.');
+      return;
+    }
+    if(!/^[a-zA-Z0-9_]{2,32}$/.test(v)){
+      $('linkWrap').classList.add('err');
+      setTimeout(() => $('linkWrap').classList.remove('err'), 500);
+      toast('err', 'Invalid format', 'Use 2–32 letters, numbers, or underscores.');
+      return;
+    }
+
+    btn.classList.add('btn-loading');
+    btn.disabled = true;
+    setTimeout(() => {
+      btn.classList.remove('btn-loading');
+      btn.disabled = false;
+      S.phantomUser = v;
+      persistUser(v);
+      const addr = genAddress();
+      S.walletAddress = addr;
+      persistAddr(addr);
+      $('linkedAtUser').textContent = '@' + v;
+      $('addrValue').textContent = addr;
+      toast('ok', 'Username linked', 'Generated a deposit address.');
+      showView('address');
+    }, 700);
+  });
+}
+
+/* =============== ADDRESS / FINISH LINKING =============== */
+function bindAddress(){
+  $('addrCpBtn').addEventListener('click', () => {
+    const a = $('addrValue').textContent;
+    copyText(a);
+    const btn = $('addrCpBtn');
+    btn.classList.add('ok');
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>';
+    toast('ok', 'Address copied', 'Paste it into your Phantom wallet.');
+    setTimeout(() => {
+      btn.classList.remove('ok');
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
+    }, 1600);
+  });
+
+  $('finishBtn').addEventListener('click', () => {
+    const btn = $('finishBtn');
+    btn.classList.add('btn-loading');
+    btn.disabled = true;
+    setTimeout(() => {
+      btn.classList.remove('btn-loading');
+      btn.disabled = false;
+      toast('ok', 'Linking complete', 'Your Phantom wallet is now bridged.');
+      route();
+    }, 800);
+  });
+}
+
+function copyText(t){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).catch(()=>fallbackCopy(t));
+  }else{ fallbackCopy(t); }
+}
+function fallbackCopy(t){
+  const ta = document.createElement('textarea');
+  ta.value = t; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); }catch(e){}
+  document.body.removeChild(ta);
+}
+
+/* =============== DASHBOARD =============== */
+function netLabel(){
+  const n = (S.settings.network || 'mainnet');
+  return n.charAt(0).toUpperCase() + n.slice(1);
+}
+
+function hydrateDash(){
+  $('dashAddr').textContent = S.walletAddress || '—';
+  $('dashUser').textContent = '@' + (S.phantomUser || 'unknown');
+  const nl = netLabel();
+  $('netLabel').textContent = nl;
+  $('netLabel2').textContent = nl;
+  renderSubscriptionBanner();
+
+  // Sentry token info
+  $('sentryId').textContent = S.sentry.id || 'SNTRY-—';
+  $('sentryIssued').textContent = S.sentry.issued || '—';
+
+  // Security summary (defaults + custom rules)
+  const secKeys = ['twoFactor','biometric','deviceApproval','ipLock','ecc','amlScreen','txSigning','withdrawConfirm','phishProtect','antiTrack'];
+  const onDefault = secKeys.filter(k => S.settings[k]).length;
+  const onCustom = S.customRules.filter(r => r.on).length;
+  const totalOn = onDefault + onCustom;
+  const totalAll = secKeys.length + S.customRules.length;
+  $('secSummary').textContent = totalOn + ' of ' + totalAll + ' protections active';
+
+  // Custom rules list
+  renderCustomRules();
+
+  // Default highlights
+  const list = $('secList');
+  list.innerHTML = '';
+  const highlight = [
+    { k:'twoFactor', label:'Two-factor authentication' },
+    { k:'ecc', label:'ECC address verification' },
+    { k:'txSigning', label:'Transaction signing' },
+    { k:'phishProtect', label:'Phishing protection' },
+  ];
+  highlight.forEach(h => {
+    const on = !!S.settings[h.k];
+    const row = document.createElement('div');
+    row.className = 'set-row';
+    row.innerHTML = `
+      <div class="set-row-info">
+        <div class="set-row-l">${h.label}</div>
+        <div class="set-row-s">${on ? '<span class="tag tag-success">On</span> Active and protecting your account' : '<span class="tag tag-warn">Off</span> Not currently enabled'}</div>
+      </div>
+      <div class="tog ${on?'on':''}" data-sec="${h.k}"></div>
+    `;
+    list.appendChild(row);
+  });
+  list.querySelectorAll('.tog').forEach(t => {
+    t.addEventListener('click', () => {
+      const k = t.dataset.sec;
+      S.settings[k] = !S.settings[k];
+      persistSettings();
+      hydrateDash();
+      renderSettings();
+    });
+  });
+}
+
+function renderCustomRules(){
+  const wrap = $('customRulesList');
+  if(!wrap) return;
+  wrap.innerHTML = '';
+  if(!S.customRules.length){
+    wrap.innerHTML = '<div class="cr-empty">No custom rules yet. Add one above to enforce your own policy.</div>';
+    return;
+  }
+  S.customRules.forEach(rule => {
+    const row = document.createElement('div');
+    row.className = 'cr-row';
+    row.innerHTML = `
+      <div class="cr-row-info">
+        <div class="cr-row-l">${escapeHtml(rule.label)} <span class="cr-row-tag">CUSTOM</span></div>
+        <div class="cr-row-s">${rule.on ? 'Enforced — currently active on this wallet.' : 'Defined but not currently enforcing.'}</div>
+      </div>
+      <div class="cr-row-actions">
+        <div class="tog ${rule.on?'on':''}" data-rule="${rule.id}"></div>
+        <button class="cr-del" data-del="${rule.id}" title="Delete rule">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 01-2 2H9a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        </button>
+      </div>
+    `;
+    wrap.appendChild(row);
+  });
+  wrap.querySelectorAll('.tog[data-rule]').forEach(t => {
+    t.addEventListener('click', () => {
+      const id = t.dataset.rule;
+      const r = S.customRules.find(x => x.id === id);
+      if(!r) return;
+      r.on = !r.on;
+      persistRules();
+      hydrateDash();
+      toast(r.on?'ok':'info', r.on?'Rule enforced':'Rule disabled', escapeHtml(r.label));
+    });
+  });
+  wrap.querySelectorAll('.cr-del').forEach(b => {
+    b.addEventListener('click', () => {
+      const id = b.dataset.del;
+      const r = S.customRules.find(x => x.id === id);
+      S.customRules = S.customRules.filter(x => x.id !== id);
+      persistRules();
+      hydrateDash();
+      if(r) toast('info', 'Rule removed', escapeHtml(r.label));
+    });
+  });
+}
+
+function bindDashboard(){
+  $('refreshBtn').addEventListener('click', () => {
+    const b = $('refreshBtn');
+    b.style.transform = 'rotate(360deg)';
+    b.style.transition = 'transform .6s var(--ease)';
+    setTimeout(()=>{ b.style.transition='none'; b.style.transform='rotate(0deg)'; }, 700);
+    toast('info', 'Synced', 'Latest sentry status and chain state refreshed.');
+  });
+
+  $('settingsBtn').addEventListener('click', openSettings);
+  $('openSettings2').addEventListener('click', openSettings);
+
+  // Custom rule add
+  function addRule(){
+    const inp = $('crInput');
+    const label = inp.value.trim();
+    if(!label){ toast('err', 'Rule required', 'Enter a description for your security rule.'); return; }
+    if(label.length < 4){ toast('err', 'Too short', 'Use at least 4 characters.'); return; }
+    if(S.customRules.some(r => r.label.toLowerCase() === label.toLowerCase())){
+      toast('err', 'Duplicate rule', 'A rule with that name already exists.');
+      return;
+    }
+    const id = 'r_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+    S.customRules.unshift({ id, label, on: true });
+    persistRules();
+    inp.value = '';
+    hydrateDash();
+    toast('ok', 'Rule added', escapeHtml(label));
+  }
+  $('crAddBtn').addEventListener('click', addRule);
+  $('crInput').addEventListener('keydown', (e) => { if(e.key === 'Enter'){ e.preventDefault(); addRule(); } });
+
+  // Transfer button + modal
+  $('transferBtn').addEventListener('click', openTransfer);
+  $('transferClose').addEventListener('click', closeTransfer);
+  $('transferCancel').addEventListener('click', closeTransfer);
+  $('transferModal').addEventListener('click', (e) => { if(e.target === $('transferModal')) closeTransfer(); });
+  $('transferConfirm').addEventListener('click', confirmTransfer);
+}
+
+function openTransfer(){
+  $('trProvider').value = '';
+  $('trAddr').value = '';
+  $('trMemo').value = '';
+  $('trProviderWrap').classList.remove('err');
+  $('trAddrWrap').classList.remove('err');
+  $('transferModal').classList.add('show');
+  setTimeout(() => $('trProvider').focus(), 200);
+}
+function closeTransfer(){
+  $('transferModal').classList.remove('show');
+}
+function confirmTransfer(){
+  const prov = $('trProvider').value.trim();
+  const addr = $('trAddr').value.trim();
+  $('trProviderWrap').classList.remove('err');
+  $('trAddrWrap').classList.remove('err');
+  if(!prov){ $('trProviderWrap').classList.add('err'); toast('err', 'Provider required', 'Enter the new provider name.'); return; }
+  if(!addr || addr.length < 6){ $('trAddrWrap').classList.add('err'); toast('err', 'Address required', 'Enter the provider receive address.'); return; }
+  const btn = $('transferConfirm');
+  btn.classList.add('btn-loading');
+  btn.disabled = true;
+  setTimeout(() => {
+    btn.classList.remove('btn-loading');
+    btn.disabled = false;
+    // Re-issue sentry token to reflect "transfer"
+    S.sentry = { id: genSentryId(), issued: todayShort() };
+    persistSentry();
+    closeTransfer();
+    hydrateDash();
+    toast('ok', 'Transfer initiated', 'ECC sentry token transfer to ' + prov + ' is pending confirmation.');
+  }, 1100);
+}
+
+/* =============== SETTINGS PANEL =============== */
+function renderSettings(){
+  ['account','verify','tx','priv','config'].forEach(g => {
+    const root = $('grp-' + g);
+    if(!root) return;
+    root.innerHTML = '';
+    SETTING_DEFS[g].forEach(def => {
+      const on = !!S.settings[def.k];
+      const row = document.createElement('div');
+      row.className = 'set-row';
+      const tagHtml = def.tag ? `<span class="set-row-tag ${def.tagClass||''}">${def.tag}</span>` : '';
+      row.innerHTML = `
+        <div class="set-row-info">
+          <div class="set-row-l">${def.label} ${tagHtml}</div>
+          <div class="set-row-s">${def.sub}</div>
+        </div>
+        <div class="tog ${on?'on':''}" data-set="${def.k}"></div>
+      `;
+      root.appendChild(row);
+    });
+  });
+
+  $$('#setPanel .tog[data-set]').forEach(t => {
+    t.addEventListener('click', () => {
+      const k = t.dataset.set;
+      S.settings[k] = !S.settings[k];
+      t.classList.toggle('on');
+      persistSettings();
+      hydrateDash();
+      const friendly = (SETTING_DEFS.account.concat(SETTING_DEFS.verify,SETTING_DEFS.tx,SETTING_DEFS.priv,SETTING_DEFS.config).find(d=>d.k===k)||{}).label||k;
+      toast(S.settings[k]?'ok':'info', S.settings[k]?friendly+' enabled':friendly+' disabled');
+    });
+  });
+
+  $('editUser').value = S.phantomUser || '';
+  $('editAddr').value = S.walletAddress || '';
+  $('autoLock').value = String(S.settings.autoLock);
+}
+
+function bindSettings(){
+  $('setClose').addEventListener('click', closeSettings);
+  $('setOverlay').addEventListener('click', closeSettings);
+
+  $('regenAddr').addEventListener('click', () => {
+    $('editAddr').value = genAddress();
+    toast('info', 'New address generated', 'Click Save changes to apply.');
+  });
+
+  $('saveLink').addEventListener('click', () => {
+    const u = $('editUser').value.trim().replace(/^@+/, '');
+    const a = $('editAddr').value.trim();
+    if(!/^[a-zA-Z0-9_]{2,32}$/.test(u)){ toast('err', 'Invalid Phantom username', '2–32 letters, numbers, or underscores.'); return; }
+    if(!/^legendzecc-\d{9}$/.test(a)){ toast('err', 'Invalid wallet address', 'Format must be legendzecc- followed by 9 digits.'); return; }
+    S.phantomUser = u;
+    S.walletAddress = a;
+    persistUser(u);
+    persistAddr(a);
+    hydrateDash();
+    toast('ok', 'Linked wallet updated', 'Changes saved.');
+  });
+
+  $('autoLock').addEventListener('change', (e) => {
+    S.settings.autoLock = parseInt(e.target.value, 10);
+    persistSettings();
+    toast('info', 'Auto-lock updated', S.settings.autoLock === 0 ? 'Auto-lock disabled.' : 'Locks after ' + S.settings.autoLock + ' minutes.');
+  });
+
+  $('signOutBtn').addEventListener('click', () => {
+    S.authenticated = false;
+    persistAuth(false);
+    closeSettings();
+    toast('info', 'Signed out', 'Your session has been ended.');
+    route();
+  });
+}
+
+function openSettings(){
+  renderSettings();
+  $('setOverlay').classList.add('show');
+  $('setPanel').classList.add('show');
+  $('setPanel').setAttribute('aria-hidden','false');
+}
+function closeSettings(){
+  $('setOverlay').classList.remove('show');
+  $('setPanel').classList.remove('show');
+  $('setPanel').setAttribute('aria-hidden','true');
+}
+
+/* =============== INIT =============== */
+function init(){
+  loadState();
+  bindLogin();
+  bindLink();
+  bindAddress();
+  bindDashboard();
+  bindSettings();
+  route();
+}
+document.addEventListener('DOMContentLoaded', init);
 </script>
 
-</body>
 </html>
